@@ -1,0 +1,15 @@
+{
+    "success": false,
+    "error": "EXECUTION_FORBIDDEN_BY_DESIGN",
+    "code": "EXECUTION_FORBIDDEN_BY_DESIGN",
+    "message": "This platform operates in DRAFT_ONLY mode. Action execution is impossible by design.",
+    "explanation": [
+        "The EAL platform is designed for recommendation and review workflows only.",
+        "AI recommendations are for human review - they cannot be auto-executed.",
+        "To implement a recommendation, a human must take action in the target system directly.",
+        "This is a security feature, not a bug. It cannot be bypassed or configured."
+    ],
+    "executionMode": "DRAFT_ONLY",
+    "blocked": true,
+    "recommendationId": "4128f010-7d1f-457a-92be-502e6743cd99"
+}

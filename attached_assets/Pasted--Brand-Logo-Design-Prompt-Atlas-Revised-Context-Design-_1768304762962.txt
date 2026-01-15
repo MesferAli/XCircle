@@ -1,0 +1,115 @@
+🎯 Brand & Logo Design Prompt — Atlas (Revised)
+
+Context
+Design a brand identity and logo for a digital platform called Atlas.
+
+Atlas is a professional system integration platform that enables simplified integration across enterprise and business systems, including:
+	•	Enterprise systems: Oracle, SAP, Microsoft
+	•	Business tools: Zoho, Google Sheets, ZID, Salla
+
+Atlas allows organizations to implement integrations without deep technical dependency, while maintaining enterprise-grade security, compliance, and control.
+
+This is a serious infrastructure platform, not a consumer app, not a developer playground, and not a marketing-driven product.
+
+⸻
+
+🔹 Core Brand Idea
+
+“Enterprise integration, simplified.”
+
+Atlas represents a stable, intelligent layer that absorbs technical complexity and presents it as a manageable system.
+
+⸻
+
+🔹 Brand Personality
+	•	Professional and confident
+	•	Calm, not aggressive
+	•	Intelligent, not flashy
+	•	Neutral and authoritative
+	•	Suitable for enterprise, government, and regulated environments
+
+Avoid any playful, trendy, or startup-style personality.
+
+⸻
+
+🔹 Logo Direction
+
+Create a symbol + wordmark logo.
+
+The symbol should abstractly represent:
+	•	A central integration layer
+	•	Structured connectivity between systems
+	•	Stability, balance, and orchestration
+	•	Control and reliability at scale
+
+The reference to “Atlas” should be conceptual, not literal:
+	•	No mythology characters
+	•	No human figures
+	•	No heavy symbolism
+
+Avoid common clichés:
+	•	Chain links
+	•	Puzzle pieces
+	•	Clouds
+	•	Generic arrows
+	•	Network diagrams
+
+⸻
+
+🔹 Visual Style
+	•	Minimal
+	•	Geometric
+	•	Clean and precise
+	•	Balanced and symmetrical
+	•	Strong in monochrome
+	•	Works in:
+	•	Enterprise dashboards
+	•	Government decks
+	•	Official documents
+	•	App icons and favicons
+
+⸻
+
+🔹 Typography
+	•	Modern, neutral sans-serif
+	•	High legibility
+	•	Professional tone
+	•	Suitable for Arabic and English coexistence (bilingual-ready)
+
+⸻
+
+🔹 Color Direction
+	•	Enterprise-safe palette
+	•	Prefer:
+	•	Deep blue
+	•	Slate
+	•	Charcoal
+	•	Muted teal
+	•	Accent color allowed but subtle
+	•	Avoid bright, playful, or consumer-oriented colors
+
+⸻
+
+🔹 What the Brand Must Communicate
+	•	This platform is built for serious systems
+	•	This platform simplifies complexity responsibly
+	•	This platform can be trusted in regulated environments
+	•	This platform scales with organizational growth
+
+⸻
+
+🔹 Deliverables Requested
+	•	Primary logo (symbol + wordmark)
+	•	Icon-only version
+	•	Monochrome version
+	•	Short explanation of the concept
+	•	Suggested color palette
+	•	Suggested typography
+
+⸻
+
+🔹 Brand Validation Test
+
+If a CIO, IT Director, or government stakeholder sees the logo, the reaction should be:
+
+“This looks like an enterprise-grade integration platform.”

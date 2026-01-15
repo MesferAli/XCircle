@@ -1,0 +1,166 @@
+
+⸻
+
+🔤 REPLIT — TYPOGRAPHY SYSTEM PROMPT
+
+XCircle Atlas | Arabic Typeface Integration (Enterprise-Grade)
+
+⸻
+
+🔴 OPERATING MODE (STRICT)
+
+You are NOT changing:
+	•	Backend logic
+	•	Product behavior
+	•	Security or governance
+	•	Page structure or flows
+
+You are implementing Typography only.
+
+If you:
+	•	apply the Arabic font everywhere blindly
+	•	reduce readability
+	•	alter numeric alignment
+	•	break RTL layouts
+
+👉 THE TASK IS FAILED.
+
+⸻
+
+🎯 OBJECTIVE
+
+Implement a professional Arabic typography system that:
+	•	Uses the provided Arabic font as a Brand Typeface
+	•	Preserves maximum readability for enterprise users
+	•	Works seamlessly with White Mode + RTL
+	•	Maintains a calm, trustworthy executive look
+
+⸻
+
+🧠 TYPOGRAPHY STRATEGY (MANDATORY)
+
+1️⃣ Font Roles (DO NOT MIX RANDOMLY)
+
+A) Brand / Display Typeface
+Use the provided Arabic font ONLY for:
+	•	Hero titles (H1, H2)
+	•	Section headers
+	•	Page titles
+	•	Recommendation titles
+	•	Key callout phrases
+
+Purpose: Identity, distinction, confidence
+
+⸻
+
+B) Functional Text Typeface
+Use a highly readable Arabic Sans font for:
+	•	Body text
+	•	Paragraphs
+	•	Forms
+	•	Tooltips
+	•	Audit logs
+	•	Tables
+	•	Long explanations
+
+Purpose: Readability, comfort, clarity
+
+(If unsure, pick a clean Arabic sans that supports RTL well.)
+
+⸻
+
+C) Numbers & Technical Data
+Use a neutral Latin font (e.g. Inter / Roboto) for:
+	•	Numbers
+	•	Percentages
+	•	Dates
+	•	IDs
+	•	Correlation IDs
+	•	Logs
+
+Purpose: Precision and alignment
+
+⸻
+
+📐 FONT SIZING & HIERARCHY (GUIDELINE)
+
+Element	Font	Size	Weight
+Hero Title (H1)	Arabic Brand Font	Large	Semi-Bold
+Section Title (H2)	Arabic Brand Font	Medium	Medium
+Page Title (H3)	Arabic Brand Font	Regular	Medium
+Body Text	Arabic Sans	Regular	Regular
+Helper Text	Arabic Sans	Small	Regular
+Numbers	Latin Font	Regular	Regular
+
+
+⸻
+
+🧩 RTL & LAYOUT SAFETY RULES
+	•	Text direction must be rtl for Arabic UI
+	•	Icons must mirror correctly
+	•	Spacing must rely on padding, not alignment hacks
+	•	Numbers remain LTR inside RTL containers
+
+⸻
+
+🎨 WHITE MODE COMPATIBILITY
+	•	Ensure sufficient contrast
+	•	Avoid light font weights on white backgrounds
+	•	Test:
+	•	Dashboard
+	•	Recommendations
+	•	Recommendation Details
+	•	Audit Log
+
+⸻
+
+🚫 EXPLICITLY FORBIDDEN
+	•	Using the Arabic brand font for long paragraphs
+	•	Applying one font globally
+	•	Mixing Arabic numerals styles inconsistently
+	•	Breaking table alignment
+	•	Decorative typography
+
+⸻
+
+📦 DELIVERABLES
+
+Replit must deliver:
+	1.	Arabic brand font loaded correctly
+	2.	Typography roles implemented as:
+	•	CSS variables / theme tokens
+	3.	Clear separation:
+	•	Display font
+	•	Functional font
+	•	Numeric font
+	4.	Screenshots showing:
+	•	Hero section
+	•	Recommendations
+	•	Audit log
+	5.	Written confirmation:
+“Typography updated only. No logic or layout behavior changed.”
+
+⸻
+
+❌ FAILURE CONDITIONS
+	•	Reduced readability
+	•	Font applied incorrectly
+	•	RTL broken
+	•	Numbers misaligned
+	•	Inconsistent hierarchy
+
+⸻
+
+🟢 SUCCESS DEFINITION
+
+The task is successful ONLY if:
+
+An executive can read the interface comfortably for 30 minutes
+Without fatigue
+And immediately feel a distinct Arabic enterprise identity
+
+⸻
+
+🔚 END OF REPLIT PROMPT
+
+⸻

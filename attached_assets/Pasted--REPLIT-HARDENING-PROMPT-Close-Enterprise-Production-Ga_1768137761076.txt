@@ -1,0 +1,197 @@
+
+
+🔒 REPLIT HARDENING PROMPT
+
+Close Enterprise Production Gaps — NO NEW FEATURES
+
+⸻
+
+🔴 OPERATING MODE (CRITICAL)
+
+You are NOT adding features.
+You are NOT improving UI.
+You are NOT changing architecture.
+
+You are performing Enterprise Production Hardening ONLY.
+
+If you add:
+	•	new pages
+	•	new use-cases
+	•	new AI logic
+	•	new UI polish
+
+👉 THE TASK IS FAILED.
+
+⸻
+
+🎯 OBJECTIVE
+
+Close the following three critical Enterprise production gaps in the existing Enterprise AI Layer platform:
+	1.	Audit must be non-bypassable
+	2.	Capabilities must be enforced server-side
+	3.	Action execution must be technically impossible (not just disabled)
+
+⸻
+
+1️⃣ GAP #1 — IMMUTABLE AUDIT (NON-BYPASSABLE)
+
+CURRENT RISK
+
+Audit exists, but it is not proven that every write path is audited.
+
+REQUIRED FIX (MANDATORY)
+
+You must guarantee and prove:
+
+There is NO code path that mutates state without emitting an audit event.
+
+REQUIRED IMPLEMENTATION
+	1.	Introduce a central write-guard layer:
+	•	All state-changing operations MUST go through it
+	•	No direct DB writes allowed outside it
+	2.	The guard must:
+	•	Emit an audit event BEFORE commit
+	•	Abort transaction if audit logging fails
+	3.	Enforce this by:
+	•	Code structure
+	•	Not by developer convention
+	4.	Add explicit comment + documentation:
+
+// SECURITY GUARANTEE:
+// No state mutation can occur without an audit record.
+
+
+
+REQUIRED PROOF
+	•	Show a code example of:
+	•	a blocked write when audit fails
+	•	Add a unit test asserting:
+	•	write → audit → commit
+	•	audit failure → rollback
+
+⸻
+
+2️⃣ GAP #2 — CAPABILITY ENFORCEMENT (BACKEND, NOT UI)
+
+CURRENT RISK
+
+Capabilities appear to be enforced in UI, but not proven server-side.
+
+REQUIRED FIX (MANDATORY)
+
+Capabilities MUST be enforced at the API and service layer, regardless of UI state.
+
+REQUIRED IMPLEMENTATION
+	1.	Every use-case execution path must:
+	•	Check required capabilities from Capability Discovery Engine
+	•	Reject request server-side if missing
+	2.	Add a capability gate:
+
+requireCapability("inventory_read")
+
+
+	3.	Missing capability must:
+	•	Reject with HTTP 403
+	•	Emit audit event:
+
+CAPABILITY_DENIED
+
+
+	4.	UI state must NOT be trusted.
+
+REQUIRED PROOF
+	•	Show backend code rejecting a request even if UI calls it directly
+	•	Add test:
+	•	capability missing → API fails → audit logged
+
+⸻
+
+3️⃣ GAP #3 — ACTION EXECUTION MUST BE IMPOSSIBLE
+
+CURRENT RISK
+
+Actions are “disabled”, but not proven impossible.
+
+REQUIRED FIX (MANDATORY)
+
+No execution must be possible even if someone bypasses UI or calls API directly.
+
+REQUIRED IMPLEMENTATION
+	1.	Introduce a hard execution lock:
+
+EXECUTION_MODE = DRAFT_ONLY
+
+This must be:
+	•	Hardcoded in production
+	•	NOT configurable via UI
+	•	NOT overrideable at runtime
+
+	2.	Remove or block:
+	•	Any POST/PUT endpoint capable of committing changes
+	•	Any credential with write/commit privileges
+	3.	Backend must throw:
+
+EXECUTION_FORBIDDEN_BY_DESIGN
+
+
+	4.	Log audit event:
+
+EXECUTION_ATTEMPT_BLOCKED
+
+
+
+REQUIRED PROOF
+	•	Attempted execution returns error
+	•	Audit log records the attempt
+	•	No DB mutation occurs
+
+⸻
+
+🚫 EXPLICITLY FORBIDDEN
+	•	Adding feature flags to UI only
+	•	“Disabled” buttons without backend enforcement
+	•	Comments without enforcement
+	•	Trusting client state
+	•	Soft rules or conventions
+
+⸻
+
+✅ REQUIRED DELIVERABLES
+
+You must return:
+	1.	Code diffs showing:
+	•	audit write-guard
+	•	capability gate
+	•	execution hard lock
+	2.	Unit tests proving:
+	•	audit non-bypassable
+	•	capability enforcement
+	•	execution impossible
+	3.	Short technical note (max 1 page):
+	•	Explaining why execution is impossible by design
+	•	Suitable for CISO review
+
+⸻
+
+❌ FAILURE CONDITIONS (ANY = FAIL)
+	•	Any state change without audit
+	•	Capability enforced only in UI
+	•	Execution blocked by config instead of design
+	•	No tests proving enforcement
+
+⸻
+
+🟢 SUCCESS DEFINITION
+
+The task is successful ONLY if:
+
+Even a malicious internal API call
+Cannot execute an action
+Cannot bypass audit
+Cannot bypass capability checks
+
+⸻
+
+🔚 END OF HARDENING PROMPT
+
+⸻

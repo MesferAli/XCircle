@@ -1,0 +1,63 @@
+Package Report
+
+-----------------------------------------------------------------------------
+Document:
+Name: XCircle Brand Universe.ai
+Color Mode: RGB color
+Color Profile: sRGB IEC61966-2.1
+Ruler Units: pixels
+Artboard Dimensions: 1920 px x 1080 px
+Show Images in Outline Mode: OFF
+Highlight Substituted Fonts: OFF
+Highlight Substituted Glyphs: OFF
+Preserve Text Editability
+Simulate Colored Paper: OFF
+
+-----------------------------------------------------------------------------
+Spot Color Objects:
+
+-----------------------------------------------------------------------------
+Missing Fonts:NONE
+
+-----------------------------------------------------------------------------
+Protected Fonts that were not packaged:
+Rubik Medium (Adobe Fonts)
+Rubik Light (Adobe Fonts)
+Rubik Regular (Adobe Fonts)
+Rubik Bold (Adobe Fonts)
+Poppins Bold (Adobe Fonts)
+Adobe Arabic (Adobe Fonts)
+
+-----------------------------------------------------------------------------
+Fonts:
+Bahnschrift Regular (OTF)
+Bahnschrift Bold (OTF)
+Agelast (OTF)
+Myriad Variable Concept Light (OTF)
+Myriad Variable Concept Regular (OTF)
+Myriad Pro (OTF)
+Myriad Variable Concept Black (OTF)
+Noto Sans Symbols Medium (TrueType)
+Al-Jazeera-Arabic-Bold (TrueType)
+Al-Jazeera-Arabic-Light (TrueType)
+AlJareedaTitle (TrueType)
+Brando Arabic Text (OTF)
+DIN Next LT Arabic Bold (OTF)
+DIN Next LT Arabic Light (OTF)
+DIN Next LT Arabic UltraLight (OTF)
+Tajawal (TrueType)
+GE SS Two Medium Medium (OTF)
+GE SS Two Light Light (OTF)
+GE SS Two Bold Bold (OTF)
+
+-----------------------------------------------------------------------------
+Embedded Fonts:
+NONE
+
+-----------------------------------------------------------------------------
+Missing Links:
+NONE
+
+-----------------------------------------------------------------------------
+Linked Images:
+NONE

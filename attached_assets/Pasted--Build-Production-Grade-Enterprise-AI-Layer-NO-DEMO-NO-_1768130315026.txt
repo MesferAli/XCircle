@@ -1,0 +1,288 @@
+
+
+Build Production-Grade Enterprise AI Layer (NO DEMO, NO MOCKS)
+
+⸻
+
+🔥 OPERATING MODE (READ CAREFULLY)
+
+You are NOT building a demo, prototype, PoC, or UI showcase.
+
+You are building a PRODUCTION-GRADE ENTERPRISE PLATFORM intended to be deployed in regulated government / enterprise environments.
+
+If you return:
+	•	mock logic
+	•	seed-only data
+	•	in-memory storage
+	•	fake AI
+	•	UI without real backend enforcement
+
+👉 THE TASK IS FAILED.
+
+⸻
+
+1️⃣ ABSOLUTE NON-NEGOTIABLE RULES
+
+1.1 No Demo / No Mock / No In-Memory
+	•	❌ No seed data in production mode
+	•	❌ No in-memory storage
+	•	❌ No placeholder AI logic
+	•	❌ No fake recommendations
+
+✅ Must use persistent database (PostgreSQL or equivalent)
+
+⸻
+
+1.2 AI MUST BE REAL, DETERMINISTIC, EXPLAINABLE
+	•	No black box
+	•	No random outputs
+	•	No “if qty < X then recommend”
+
+Each recommendation MUST include:
+	•	confidence_score (0–100)
+	•	signals_used (list)
+	•	time_window
+	•	deterministic logic
+
+If this is missing → FAIL
+
+⸻
+
+1.3 NO AUTO-EXECUTION — EVER
+	•	Posting = HARD DISABLED
+	•	Actions = Draft only
+	•	Approval mandatory
+	•	Dry-run mandatory
+
+This must be enforced in:
+	•	backend
+	•	policy engine
+	•	UI
+
+⸻
+
+1.4 REST-FIRST (NO VENDOR ASSUMPTIONS)
+
+Assume ALL CUSTOMERS USE GENERIC REST APIs ONLY.
+
+Oracle / Zoho / ERPNext are optional later.
+
+If your design depends on any ERP → FAIL
+
+⸻
+
+1.5 AUDIT TRACE IS LEGALLY REQUIRED
+
+For every recommendation:
+
+Signal
+→ Mapping
+→ Canonical Model
+→ AI Decision
+→ Policy Check
+→ Human Approval
+→ Draft Action
+
+This trace MUST be queryable in UI.
+
+No trace → FAIL
+
+⸻
+
+2️⃣ PLATFORM DEFINITION (DO NOT REINTERPRET)
+
+You are building:
+
+Enterprise AI Layer
+A decision-intelligence platform that sits ABOVE systems, not inside them.
+
+This platform:
+	•	ingests data via REST APIs
+	•	normalizes to a canonical model
+	•	runs deterministic AI
+	•	proposes decisions
+	•	enforces governance
+	•	NEVER executes automatically
+
+⸻
+
+3️⃣ REQUIRED CORE MODULES (ALL MANDATORY)
+
+You MUST implement ALL of the following as real backend modules:
+
+3.1 Generic REST Connector (REAL)
+	•	Persistent connector configs
+	•	Auth support:
+	•	API Key
+	•	Bearer
+	•	OAuth2
+	•	Polling with cursor/time window
+	•	Rate limiting
+	•	Health checks
+
+No UI-only connectors.
+
+⸻
+
+3.2 Zero-Code Mapping Engine (REAL)
+	•	JSONPath → Canonical
+	•	Stored mappings in DB
+	•	Validation
+	•	Preview
+	•	Versioning
+	•	Rollback
+
+Mapping must actually transform real REST payloads.
+
+⸻
+
+3.3 Canonical Inventory Model (STRICT)
+
+Entities:
+	•	Item
+	•	Location
+	•	StockBalance
+	•	StockMovement
+	•	DemandSignal
+	•	Recommendation
+	•	Anomaly
+	•	Action
+
+AI services must ONLY consume canonical entities.
+
+⸻
+
+3.4 Capability Discovery Engine (AUTOMATED)
+	•	Probe REST endpoints
+	•	Detect:
+	•	read capability
+	•	draft action capability
+	•	No manual toggles
+	•	Store results in DB
+	•	Use to enable/disable use-cases
+
+⸻
+
+3.5 REAL AI Inventory Engine
+
+Implement deterministic algorithms for:
+	•	demand forecasting
+	•	stockout risk (7/14/30)
+	•	anomaly detection
+
+Each output must include:
+	•	confidence_score
+	•	explanation
+	•	signals_used
+
+No random, no LLM.
+
+⸻
+
+3.6 Policy Engine (HARD ENFORCEMENT)
+	•	Who can approve
+	•	What action types allowed
+	•	Environment awareness (DEV/UAT/PROD)
+	•	Instant revoke
+
+Policies must be enforced server-side.
+
+⸻
+
+3.7 REST Action Guardrails (MANDATORY)
+	•	Read-only default
+	•	Draft only
+	•	Dry-run required
+	•	Approval required
+	•	Blast-radius limits
+
+Backend must reject violations even if UI is bypassed.
+
+⸻
+
+3.8 Audit Engine (IMMUTABLE)
+	•	Store every signal
+	•	Store every decision
+	•	Store every policy evaluation
+	•	Store every approval
+	•	Store every outbound action
+
+No deletes. No edits.
+
+⸻
+
+4️⃣ UI REQUIREMENTS (SECONDARY BUT REQUIRED)
+
+UI is NOT the product, but must expose:
+	•	Dashboard (real metrics)
+	•	Connectors (real configs)
+	•	Mapping Studio (real transformations)
+	•	Capabilities (auto-discovered)
+	•	Recommendations (real AI)
+	•	Policies (hard-coded guardrails visible)
+	•	Audit (full trace viewer)
+
+Add GLOBAL BANNER:
+
+🔒 Production Mode — No auto-execution. All actions require approval.
+
+⸻
+
+5️⃣ STORAGE & INFRA (MANDATORY)
+	•	PostgreSQL (or equivalent)
+	•	Proper schema
+	•	Tenant isolation
+	•	Secrets vault (env-based minimum)
+
+No SQLite.
+No memory DB.
+
+⸻
+
+6️⃣ DELIVERY RULES
+
+You MUST deliver:
+	•	Real backend code
+	•	Real database schema
+	•	No mocks
+	•	No TODOs
+	•	Clear README
+	•	OpenAPI spec
+	•	Audit proof
+
+If something is “future work” → explicitly mark it disabled.
+
+⸻
+
+7️⃣ FAILURE CONDITIONS (ANY = TASK FAILED)
+	•	Seed data used in PROD
+	•	In-memory logic
+	•	Fake AI
+	•	No confidence score
+	•	No audit trace
+	•	UI pretending backend exists
+	•	Auto-execution possible
+
+⸻
+
+8️⃣ SUCCESS DEFINITION
+
+This task is ONLY successful if:
+
+A government CISO can audit the platform
+A COO can trust the decisions
+A system can be unplugged instantly
+No engineer is needed per customer
+
+⸻
+
+🔚 END OF PROMPT — NO QUESTIONS, JUST BUILD
+
+⸻
+
+🎯 نصيحتي الصريحة لك (خارج البرومبت)
+	•	البرومبت هذا قاسي لكنه ضروري
+‏	•	Replit يميل دائمًا لبناء “App”
+	•	هذا البرومبت يجبره يبني Platform
+
+⸻

@@ -1,0 +1,260 @@
+{
+  "description": "Pre-configured mapping configurations for Demo with Mock External System",
+  "version": "1.0.0",
+  "configs": [
+    {
+      "name": "Items Mapping",
+      "description": "Maps external inventory items to canonical Item entity",
+      "sourceEndpoint": "/api/items",
+      "targetEntity": "item",
+      "fieldMappings": [
+        {
+          "sourceField": "item_id",
+          "targetField": "externalId",
+          "transformation": null,
+          "required": true
+        },
+        {
+          "sourceField": "sku",
+          "targetField": "sku",
+          "transformation": null,
+          "required": true
+        },
+        {
+          "sourceField": "item_name",
+          "targetField": "name",
+          "transformation": null,
+          "required": true
+        },
+        {
+          "sourceField": "item_description",
+          "targetField": "description",
+          "transformation": null,
+          "required": false
+        },
+        {
+          "sourceField": "item_category",
+          "targetField": "category",
+          "transformation": null,
+          "required": false
+        },
+        {
+          "sourceField": "unit_of_measure",
+          "targetField": "unit",
+          "transformation": {
+            "type": "lowercase"
+          },
+          "required": false
+        },
+        {
+          "sourceField": "reorder_level",
+          "targetField": "reorderPoint",
+          "transformation": {
+            "type": "integer"
+          },
+          "required": false
+        },
+        {
+          "sourceField": "reorder_qty",
+          "targetField": "reorderQuantity",
+          "transformation": {
+            "type": "integer"
+          },
+          "required": false
+        },
+        {
+          "sourceField": "lead_time",
+          "targetField": "leadTimeDays",
+          "transformation": {
+            "type": "integer"
+          },
+          "required": false
+        },
+        {
+          "sourceField": "is_active",
+          "targetField": "isActive",
+          "transformation": {
+            "type": "boolean"
+          },
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Locations Mapping",
+      "description": "Maps external locations to canonical Location entity",
+      "sourceEndpoint": "/api/locations",
+      "targetEntity": "location",
+      "fieldMappings": [
+        {
+          "sourceField": "location_id",
+          "targetField": "externalId",
+          "transformation": null,
+          "required": true
+        },
+        {
+          "sourceField": "location_name",
+          "targetField": "name",
+          "transformation": null,
+          "required": true
+        },
+        {
+          "sourceField": "location_type",
+          "targetField": "type",
+          "transformation": {
+            "type": "enum",
+            "mapping": {
+              "WAREHOUSE": "warehouse",
+              "DISTRIBUTION": "distribution_center",
+              "STORE": "store"
+            }
+          },
+          "required": true
+        },
+        {
+          "sourceField": "address",
+          "targetField": "address",
+          "transformation": null,
+          "required": false
+        },
+        {
+          "sourceField": "is_active",
+          "targetField": "isActive",
+          "transformation": {
+            "type": "boolean"
+          },
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Stock Balances Mapping",
+      "description": "Maps external stock balances to canonical StockBalance entity",
+      "sourceEndpoint": "/api/stock-balances",
+      "targetEntity": "stock_balance",
+      "fieldMappings": [
+        {
+          "sourceField": "item_id",
+          "targetField": "itemId",
+          "transformation": {
+            "type": "lookup",
+            "lookupEntity": "item",
+            "lookupField": "externalId"
+          },
+          "required": true
+        },
+        {
+          "sourceField": "location_id",
+          "targetField": "locationId",
+          "transformation": {
+            "type": "lookup",
+            "lookupEntity": "location",
+            "lookupField": "externalId"
+          },
+          "required": true
+        },
+        {
+          "sourceField": "qty_on_hand",
+          "targetField": "quantityOnHand",
+          "transformation": {
+            "type": "integer"
+          },
+          "required": true
+        },
+        {
+          "sourceField": "qty_reserved",
+          "targetField": "quantityReserved",
+          "transformation": {
+            "type": "integer"
+          },
+          "required": false
+        },
+        {
+          "sourceField": "qty_available",
+          "targetField": "quantityAvailable",
+          "transformation": {
+            "type": "integer"
+          },
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "Stock Movements Mapping",
+      "description": "Maps external stock movements to canonical StockMovement entity",
+      "sourceEndpoint": "/api/stock-movements",
+      "targetEntity": "stock_movement",
+      "fieldMappings": [
+        {
+          "sourceField": "item_id",
+          "targetField": "itemId",
+          "transformation": {
+            "type": "lookup",
+            "lookupEntity": "item",
+            "lookupField": "externalId"
+          },
+          "required": true
+        },
+        {
+          "sourceField": "location_id",
+          "targetField": "locationId",
+          "transformation": {
+            "type": "lookup",
+            "lookupEntity": "location",
+            "lookupField": "externalId"
+          },
+          "required": true
+        },
+        {
+          "sourceField": "movement_type",
+          "targetField": "movementType",
+          "transformation": {
+            "type": "enum",
+            "mapping": {
+              "RECEIPT": "in",
+              "ISSUE": "out",
+              "TRANSFER": "transfer",
+              "ADJUSTMENT": "adjustment"
+            }
+          },
+          "required": true
+        },
+        {
+          "sourceField": "quantity",
+          "targetField": "quantity",
+          "transformation": {
+            "type": "integer"
+          },
+          "required": true
+        },
+        {
+          "sourceField": "reference_number",
+          "targetField": "referenceId",
+          "transformation": null,
+          "required": false
+        },
+        {
+          "sourceField": "movement_date",
+          "targetField": "timestamp",
+          "transformation": {
+            "type": "datetime",
+            "format": "ISO8601"
+          },
+          "required": true
+        }
+      ]
+    }
+  ],
+  "transformationTypes": {
+    "integer": "Convert string to integer",
+    "boolean": "Convert to boolean (true/false)",
+    "lowercase": "Convert string to lowercase",
+    "uppercase": "Convert string to uppercase",
+    "datetime": "Parse datetime string to Date object",
+    "enum": "Map source values to target values using lookup table",
+    "lookup": "Resolve foreign key by looking up related entity",
+    "math": "Apply mathematical operation (add, subtract, multiply, divide)",
+    "concat": "Concatenate multiple fields",
+    "split": "Split string and take specific part"
+  }
+}

@@ -1,0 +1,325 @@
+🧭 REPLIT — USER JOURNEY IMPLEMENTATION PROMPT
+XCircle Atlas | Enterprise & SMB Onboarding Flows
+🔴 OPERATING MODE (STRICT)
+
+You are NOT changing:
+
+AI logic
+
+Governance rules
+
+Execution locks
+
+Security constraints
+
+Pricing values (use placeholders if needed)
+
+You are implementing user journeys and UX flows only:
+
+Registration paths
+
+Feature gating
+
+Trial logic
+
+Upgrade / conversion logic
+
+Payment integration (SMB only)
+
+If you:
+
+enable auto-execution
+
+bypass trial limits
+
+expose locked features
+
+change backend decision logic
+
+👉 THE TASK IS FAILED.
+
+🎯 OBJECTIVE
+
+Implement two distinct user journeys inside the same product:
+
+Enterprise Journey (guided, no payment, meeting-based conversion)
+
+SMB Journey (self-serve, payment-based conversion via Moyasar)
+
+Both journeys must:
+
+Start the same
+
+Share the same product
+
+Diverge only in commercial UX
+
+🧩 GLOBAL ENTRY POINT
+CTA (Landing Page)
+
+ابدأ التجربة
+
+➡️ Leads to: Company Type Selection
+
+🧭 STEP 1 — COMPANY TYPE SELECTION (MANDATORY)
+Screen Title
+
+ما هو نوع شركتك؟
+
+Options (Radio Cards)
+
+🏢 شركة كبيرة / جهة مؤسسية
+
+🏬 شركة صغيرة / متوسطة
+
+Selection determines:
+
+Registration flow
+
+Trial messaging
+
+Conversion behavior
+
+🏢 ENTERPRISE JOURNEY
+STEP 2-E — ENTERPRISE SIGNUP
+Required Fields
+
+Company name
+
+Work email
+
+Industry
+
+Role / Title
+
+🚫 No credit card
+🚫 No pricing shown
+
+CTA
+
+ابدأ التجربة المؤسسية
+
+STEP 3-E — USE CASE SELECTION (SINGLE)
+Screen Title
+
+اختر حالة الاستخدام التي تريد البدء بها
+
+Options
+
+☑️ إدارة المخزون (Enabled)
+
+⬜ سلسلة التوريد (Disabled / Greyed)
+
+⬜ الموارد البشرية (Disabled / Greyed)
+
+⬜ المبيعات والتسويق (Disabled / Greyed)
+
+⬜ العمليات (Disabled / Greyed)
+
+UX Behavior
+
+Only one use case selectable
+
+Other use cases:
+
+Visible
+
+Greyed out
+
+Tooltip:
+
+متاحة بعد التفعيل المؤسسي
+
+STEP 4-E — ENTERPRISE TRIAL (7 DAYS)
+Behavior
+
+Activate selected use case
+
+Freeze others
+
+Show persistent banner:
+
+تجربة مؤسسية – 7 أيام
+
+Trial Countdown
+
+Day 1–7 visible
+
+Day 4: soft reminder
+
+Day 6: strong reminder
+
+STEP 5-E — TRIAL EXPIRY (FREEZE MODE)
+On Day 7 End
+
+Disable AI runs
+
+Disable insights generation
+
+Keep:
+
+data
+
+connectors
+
+configurations
+
+UI becomes Read-only
+
+Expiry Screen
+
+انتهت التجربة المؤسسية
+
+Text:
+
+لتفعيل المنصة وتشغيل حالات استخدام إضافية،
+نحتاج جلسة تحديد متطلبات قصيرة.
+
+CTA
+
+📅 احجز اجتماع تحديد المتطلبات
+
+STEP 6-E — EMAIL AUTOMATION
+Email Subject
+
+انتهاء تجربة XCircle Atlas – الخطوة التالية
+
+Email Body (Arabic)
+
+Thank you
+
+Summary of trial activity
+
+Meeting booking link
+
+Clear next step
+
+🏬 SMB JOURNEY
+STEP 2-S — SMB SIGNUP
+Fields
+
+Company name
+
+Email
+
+Password
+
+CTA
+
+ابدأ الآن
+
+STEP 3-S — USE CASE SELECTION (SAME AS ENTERPRISE)
+
+Same UI
+
+Same single-use-case activation
+
+Same greyed-out features
+
+(Consistency is mandatory)
+
+STEP 4-S — SMB TRIAL (7 DAYS)
+Banner
+
+تجربة مجانية – 7 أيام
+
+CTA Visible
+
+الترقية الآن
+
+STEP 5-S — TRIAL EXPIRY → UPGRADE
+Expiry Screen
+
+انتهت تجربتك المجانية
+
+Text:
+
+اختر الباقة المناسبة لك للاستمرار
+
+Plans Displayed
+
+Pilot
+
+Business
+
+STEP 6-S — PAYMENT (MOYASAR)
+Requirements
+
+Integrate Moyasar Checkout
+
+Support:
+
+Mada
+
+Visa / Mastercard
+
+On success:
+
+Activate plan immediately
+
+On failure:
+
+Show retry message
+
+🚫 No manual intervention
+
+🔒 FEATURE GATING RULES (CRITICAL)
+
+Locked use cases:
+
+Visible
+
+Greyed out
+
+Tooltip explanation
+
+No hidden features
+
+No accidental activation
+
+📦 REQUIRED DELIVERABLES
+
+Replit must deliver:
+
+Full Enterprise journey working
+
+Full SMB journey working
+
+7-day trial logic enforced
+
+Feature freeze after trial expiry
+
+Moyasar integration (SMB only)
+
+Screenshots of:
+
+Company type selection
+
+Use case selection
+
+Trial banner
+
+Trial expiry (Enterprise + SMB)
+
+❌ FAILURE CONDITIONS
+
+Enterprise sees pricing or payment
+
+SMB forced to meeting
+
+Locked features accessible
+
+Trial not enforced
+
+Payment bypasses activation logic
+
+🟢 SUCCESS DEFINITION
+
+The task is successful ONLY if:
+
+Two users (Enterprise & SMB)
+Experience the same product
+But are guided through
+Two clean, intentional commercial journeys
+
+🔚 END OF REPLIT PROMPT

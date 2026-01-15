@@ -1,0 +1,152 @@
+🎨 REPLIT — UI/UX MODERNIZATION PROMPT
+
+XCircle Enterprise AI Layer — White Mode UI Refresh
+
+⸻
+
+🔴 OPERATING MODE (STRICT)
+
+You are NOT changing backend logic.
+You are NOT adding features.
+You are NOT modifying security, policies, AI, connectors, or workflows.
+
+You are performing UI/UX modernization ONLY.
+
+If you:
+	•	touch backend logic
+	•	change API contracts
+	•	alter data flow
+	•	weaken governance banners
+	•	introduce demo-only shortcuts
+
+👉 THE TASK IS FAILED.
+
+⸻
+
+🎯 OBJECTIVE
+
+Modernize the existing UI only to achieve:
+	•	Clean White Mode default
+	•	Enterprise / Government-ready look
+	•	Visual alignment with XCircle brand
+	•	Clear, calm, executive-friendly interface
+
+⸻
+
+🧠 BRAND GUIDELINES (XCIRCLE)
+
+Visual Identity
+	•	Theme: White / Light (default)
+	•	Tone: Calm, professional, confident
+	•	Avoid: Dark mode, flashy gradients, neon colors
+
+Color Palette (Use as guidance, not hard rule)
+	•	Primary: Soft neutral (white / off-white)
+	•	Accent: Muted blue / teal (used sparingly)
+	•	Status colors:
+	•	Success: muted green
+	•	Warning: amber
+	•	Error: soft red (not aggressive)
+
+Typography
+	•	Clean sans-serif
+	•	Good Arabic/English compatibility
+	•	Clear hierarchy:
+	•	Page titles
+	•	Section headers
+	•	Body text
+	•	Helper text
+
+⸻
+
+🧩 SCOPE — PAGES TO UPDATE (UI ONLY)
+
+Apply the White Mode modern style consistently across:
+	1.	Dashboard
+	•	Clear cards
+	•	Subtle shadows
+	•	No visual clutter
+	•	Executive metrics first
+	2.	Connectors
+	•	Clean forms
+	•	Logical grouping
+	•	Clear connection status
+	3.	Mapping Studio
+	•	Structured panels
+	•	Clear preview area
+	•	Readable JSON / Canonical output
+	•	Visual separation between source & target
+	4.	Recommendations
+	•	Card/list layout
+	•	Confidence clearly visible
+	•	Status badges (Draft / Blocked)
+	5.	Recommendation Details
+	•	Explanation section clearly highlighted
+	•	Signals used grouped and readable
+	•	No dense blocks of text
+	6.	Policies & Guardrails
+	•	Clear warning banners
+	•	“No Auto-Execution” message visible
+	•	Calm but firm tone
+	7.	Audit Log
+	•	Table with clear columns
+	•	Trace grouped visually
+	•	Easy to follow correlation
+
+⸻
+
+🎨 DESIGN RULES (MANDATORY)
+	•	White background by default
+	•	Subtle borders & dividers
+	•	Spacing over lines
+	•	Minimal icons (functional only)
+	•	No animations unless very subtle
+	•	RTL-safe layout (do not break Arabic later)
+
+⸻
+
+🚫 EXPLICITLY FORBIDDEN
+	•	Dark mode as default
+	•	Drastic layout changes
+	•	Rebranding text or terminology
+	•	Changing labels meaning
+	•	Removing governance banners
+	•	Over-design / marketing visuals
+
+⸻
+
+📦 DELIVERABLES
+
+Replit must deliver:
+	1.	Updated UI with White Mode default
+	2.	Visual consistency across all pages
+	3.	Screenshots:
+	•	Dashboard
+	•	Recommendations
+	•	Recommendation Details
+	•	Audit
+	4.	Written confirmation:
+“UI changes only. No backend, security, or logic changes were made.”
+
+⸻
+
+❌ FAILURE CONDITIONS
+	•	Any backend change detected
+	•	Governance banners removed or softened
+	•	UI looks like demo/marketing site
+	•	Dark mode enabled by default
+
+⸻
+
+🟢 SUCCESS DEFINITION
+
+The task is successful ONLY if:
+
+A CIO can open the platform
+Feel immediate trust
+Clearly read decisions and explanations
+And perceive the product as Enterprise-grade
+
+⸻
+
+🔚 END OF REPLIT PROMPT

@@ -1,0 +1,289 @@
+
+
+تمام. أدناه البرومبت الكامل والنهائي لمنصة Replit لبدء بناء المنصة كاملة من الصفر كـ Enterprise AI Layer (Plug & Play, REST-First).
+هذا البرومبت مصمم ليعمل مع Replit Agent / Team بدون افتراضات إضافية، ويمنع الانحراف إلى حلول تكامل مخصصة.
+
+انسخه كما هو وأرسله إلى Replit.
+هذا هو “دستور التنفيذ”.
+
+⸻
+
+🚀 MASTER REPLIT PROMPT
+
+Build: Enterprise AI Layer (EAL) — Plug & Play, REST-First
+
+⸻
+
+1) ROLE & OPERATING MODE
+
+You are a senior, multi-disciplinary product engineering team (Platform Architect, Backend Engineer, AI Engineer, Security Engineer, QA).
+
+Your mission is to design, implement, test, and document a production-grade Enterprise AI Layer (EAL).
+
+This is NOT:
+	•	an ERP plugin
+	•	a BI tool
+	•	an iPaaS
+	•	a one-off integration project
+
+This IS:
+	•	a Decision Intelligence Platform
+	•	REST-first
+	•	Plug & Play
+	•	Policy-governed
+	•	Enterprise-grade
+
+⸻
+
+2) NON-NEGOTIABLE CONSTRAINTS (HARD RULES)
+	1.	REST-First
+	•	Assume most customers expose ONLY REST APIs.
+	•	Oracle / Zoho / ERPNext are optional conveniences, not dependencies.
+	2.	Plug & Play
+	•	No custom code per customer.
+	•	Configuration > Coding.
+	•	Zero-code onboarding via UI + config.
+	3.	AI Recommends Only
+	•	AI MUST NOT auto-execute.
+	•	No posting / committing transactions.
+	•	Draft / Task / Notify only.
+	4.	Human-in-the-Loop
+	•	Approval mandatory for any outbound action.
+	5.	Canonical Model Mandatory
+	•	All AI consumes canonical data only.
+	•	No system-specific schemas in AI.
+	6.	Audit Everything
+	•	Signals → Decisions → Actions.
+	•	Immutable logs.
+	7.	Enterprise Security
+	•	Tenant isolation
+	•	Secrets vault
+	•	RBAC / Policy Engine
+
+⸻
+
+3) PRODUCT OBJECTIVE
+
+Build a Plug & Play Enterprise AI Decision Layer that sits above existing systems, ingests data via REST APIs, normalizes it into a Canonical Model, produces explainable AI recommendations, and enables safe, policy-controlled actions.
+
+⸻
+
+4) MVP SCOPE (WHAT TO BUILD FIRST)
+
+Domains
+	•	Inventory (ONLY for v1)
+
+Core Capabilities
+	•	Generic REST Connector (productized)
+	•	Zero-Code Mapping Studio
+	•	Capability Discovery Engine
+	•	Canonical Inventory Model
+	•	AI Inventory Intelligence
+	•	Policy Engine
+	•	REST Actions Guardrails
+	•	Audit Engine
+	•	Plug & Play Onboarding Wizard
+
+⸻
+
+5) REPOSITORY & SERVICE STRUCTURE
+
+Build as a platform, not a monolith.
+
+enterprise_ai_layer/
+├── core/
+│   ├── api/
+│   ├── auth/
+│   ├── policy/
+│   ├── audit/
+│   ├── events/
+│   └── tenancy/
+├── connectors/
+│   ├── generic_rest/
+│   ├── sdk/
+│   └── native/ (placeholders)
+├── mapping_studio/
+│   ├── engine/
+│   └── ui/
+├── capability_discovery/
+├── canonical_model/
+│   └── inventory/
+├── ai_services/
+│   └── inventory/
+├── action_orchestrator/
+├── webhooks/
+├── docs/
+│   ├── openapi.yaml
+│   ├── connector_contract.md
+│   ├── canonical_model_inventory_v1.md
+│   ├── mapping_studio_prd.md
+│   ├── capability_discovery_engine_spec.md
+│   ├── rest_actions_guardrails_spec.md
+│   └── pilot_demo_script.md
+├── tests/
+└── README.md
+
+
+⸻
+
+6) CORE PLATFORM COMPONENTS (MANDATORY)
+
+6.1 Generic REST Connector (GRC)
+	•	Auth types: API Key, OAuth2, Bearer, Custom Header
+	•	Endpoint configuration via UI
+	•	Polling ingestion
+	•	Draft actions only
+	•	Rate limiting
+	•	Health checks
+
+6.2 Mapping Studio (Zero-Code)
+	•	JSONPath → Canonical mapping
+	•	Transformations (type, math, enum)
+	•	Preview before save
+	•	Validation
+	•	Versioning + rollback
+
+6.3 Capability Discovery Engine
+	•	Live API probing (safe, GET only)
+	•	Detect read / event / draft action support
+	•	Fact-based capability inference
+	•	Auto enable/disable use-cases
+
+6.4 Canonical Inventory Model
+
+Entities:
+	•	Item
+	•	Location
+	•	StockBalance
+	•	StockMovement
+	•	DemandSignal
+	•	Recommendation
+	•	Anomaly
+	•	Action
+
+6.5 AI Inventory Services
+	•	Demand forecasting
+	•	Stockout risk (7/14/30)
+	•	Anomaly detection
+	•	Explainability + confidence score
+	•	Deterministic, stateless, no black box
+
+6.6 Policy Engine
+	•	Who can approve
+	•	What actions allowed
+	•	Environment-aware (Dev/UAT/Prod)
+	•	Instant revoke
+
+6.7 REST Actions Guardrails
+	•	Read-only default
+	•	Draft-only actions
+	•	Dry-run mandatory
+	•	Blast radius limits
+	•	Approval mandatory
+
+6.8 Audit Engine
+	•	Immutable logs
+	•	Signal → Decision → Action traceability
+	•	Exportable for compliance
+
+⸻
+
+7) ONBOARDING FLOW (MUST IMPLEMENT)
+	1.	Create Tenant
+	2.	Choose Connector Type → Generic REST
+	3.	Configure Auth
+	4.	Define Endpoints
+	5.	Capability Discovery (auto)
+	6.	Zero-Code Mapping
+	7.	Dry-Run AI
+	8.	Go Live (Read-Only)
+
+Target Time-to-Value ≤ 48h.
+
+⸻
+
+8) API & INTEGRATION RULES
+	•	API-First
+	•	OpenAPI required
+	•	Canonical payloads only
+	•	Webhooks for:
+	•	recommendation.created
+	•	anomaly.detected
+	•	action.approved
+
+⸻
+
+9) SECURITY REQUIREMENTS
+	•	Secrets vault
+	•	RBAC
+	•	Tenant isolation
+	•	No credential leakage
+	•	No direct DB access to source systems
+
+⸻
+
+10) TESTING & QA (BLOCKING)
+
+The build is NOT COMPLETE unless:
+	•	Any REST API can be onboarded without code
+	•	Mapping works with preview + rollback
+	•	AI runs without system-specific logic
+	•	Actions are blocked without approval
+	•	Audit trail is complete
+	•	Platform can be disabled instantly
+
+⸻
+
+11) DOCUMENTATION (MANDATORY)
+
+Deliver:
+	•	README (setup + architecture)
+	•	OpenAPI spec
+	•	Connector Contract
+	•	Canonical Model docs
+	•	Pilot Demo Script
+	•	Known limitations
+
+⸻
+
+12) DELIVERY EXPECTATIONS
+	•	Clean, modular code
+	•	No TODOs
+	•	No customer-specific hacks
+	•	Ready for Enterprise review
+	•	Tag release: v1.0.0-mvp
+
+⸻
+
+13) SUCCESS CRITERIA
+
+The platform succeeds if:
+	•	It works with any REST API
+	•	AI logic never changes per system
+	•	No auto-execution occurs
+	•	CIO / CISO trust the platform
+	•	A pilot can be run without engineers
+
+⸻
+
+END OF PROMPT
+
+⸻
+
+ملاحظة ختامية (مهمة جدًا)
+
+إذا نفّذ الفريق هذا البرومبت بحرفيته، فأنت:
+	•	لا تبني مشروع
+	•	لا تبني إضافة
+	•	بل تبني منتج Enterprise قابل للبيع والتوسع
+
+⸻
+
+الخطوة التالية بعد Replit
+
+عند أول مخرجات (حتى لو Skeleton):
+	•	الصقها هنا
+	•	سأراجعها كمراجع معماري صارم
+	•	ثم نحولها إلى Backlog 90 يوم + خطة إطلاق
+
+أنت الآن في مرحلة التنفيذ الصحيح 100%.

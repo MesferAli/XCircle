@@ -1,0 +1,242 @@
+
+⸻
+
+🎨 REPLIT — LANDING PAGE IMPLEMENTATION PROMPT
+
+XCircle Atlas | Enterprise AI Layer (White Mode)
+
+⸻
+
+🔴 OPERATING MODE (STRICT)
+
+You are NOT modifying backend logic.
+You are NOT adding features or flows.
+You are NOT changing security, governance, or execution behavior.
+
+You are implementing a public-facing Landing Page only, based on the provided content wireframe.
+
+If you:
+	•	touch backend logic
+	•	add demo shortcuts
+	•	alter product behavior
+	•	weaken governance messaging
+
+👉 THE TASK IS FAILED.
+
+⸻
+
+🎯 OBJECTIVE
+
+Implement a modern, enterprise-grade landing page for XCircle Atlas that:
+	•	Communicates the platform as a general Enterprise AI Layer
+	•	Is White Mode by default
+	•	Uses Arabic (primary) with clean RTL
+	•	Reflects trust, governance, and decision intelligence
+	•	Is suitable for CIO / CISO / Government audiences
+
+⸻
+
+🧩 CONTENT STRUCTURE (MUST FOLLOW EXACTLY)
+
+SECTION 1 — HERO
+
+H1:
+طبقة الذكاء الاصطناعي لأي نظام مؤسسي
+
+H2:
+حوّل بيانات أنظمتك الحالية إلى قرارات مفسّرة
+بدون تنفيذ تلقائي، وبحوكمة كاملة
+
+Description:
+XCircle Atlas تعمل كطبقة ذكاء موحّدة فوق الأنظمة المؤسسية،
+تربط البيانات، تحلّلها، وتقترح قرارات قابلة للمراجعة البشرية
+دون تغيير الأنظمة أو نقل البيانات خارج بيئة الجهة.
+
+CTAs:
+	•	زر أساسي: اطلب تجربة مؤسسية (Pilot)
+	•	زر ثانوي: شاهد كيف تعمل المنصة
+
+Design Notes:
+	•	White background
+	•	XCircle logo large
+	•	Product name “Atlas” secondary
+
+⸻
+
+SECTION 2 — TRUST & COMPATIBILITY
+
+Title:
+متوافقة مع أنظمتك الحالية
+
+Text:
+مصممة للعمل فوق الأنظمة المؤسسية دون الحاجة لاستبدالها
+
+Logos (visual only):
+	•	Oracle
+	•	SAP
+	•	Zoho
+	•	Microsoft Dynamics
+	•		•	REST APIs
+
+Note:
+Use “Compatible with” phrasing. No partnership claims.
+
+⸻
+
+SECTION 3 — PROBLEM
+
+Title:
+البيانات موجودة… القرار مشتّت
+
+Bullets:
+	•	الأنظمة متعدّدة والقرار مجزّأ
+	•	الداشبوردات تعرض ما حدث فقط
+	•	الأتمتة المباشرة عالية المخاطر
+	•	القرار يحتاج تفسيرًا وتوثيقًا
+
+Closing line:
+
+المؤسسات لا تحتاج مزيدًا من الأرقام، بل تحتاج قرارًا يمكن الدفاع عنه.
+
+⸻
+
+SECTION 4 — SOLUTION
+
+Title:
+طبقة قرار ذكية فوق أنظمتك
+
+Text:
+XCircle Atlas ليست نظامًا تشغيليًا، ولا أداة تنفيذ،
+بل طبقة ذكاء تفصل بين البيانات والقرار والالتزام.
+
+Callout:
+
+القرار بيد الإنسان — دائمًا.
+
+⸻
+
+SECTION 5 — CORE PILLARS (4 CARDS)
+
+Title:
+كيف تعمل XCircle Atlas؟
+
+Cards (4 equal columns):
+	1.	الموصلات الذكية
+	2.	محرك الذكاء الاصطناعي
+	3.	الحوكمة والسياسات
+	4.	التحليلات والتدقيق
+
+Use the exact bullet points from the wireframe.
+
+⸻
+
+SECTION 6 — USE CASES
+
+Title:
+منصة واحدة — حالات استخدام متعددة
+
+Cards:
+	•	إدارة المخزون
+	•	سلسلة التوريد
+	•	الموارد البشرية
+	•	المبيعات والتسويق
+	•	العمليات
+
+Footer note:
+
+توصية + تفسير + موافقة بشرية
+
+⸻
+
+SECTION 7 — HYBRID MODEL
+
+Title:
+نموذج تشغيل هجين وآمن
+
+3-step visual:
+	1.	Agent داخل الجهة
+	2.	ذكاء وسياسات سحابية
+	3.	اتصال خارجي فقط — بدون تنفيذ
+
+Security callouts:
+	•	لا تنفيذ تلقائي
+	•	لا نقل بيانات
+	•	لا تغيير أنظمة
+
+⸻
+
+SECTION 8 — PROOF
+
+Title:
+مثبتة تشغيليًا — ليست عرضًا نظريًا
+
+Bullets:
+	•	تشغيل حي End-to-End
+	•	توصيات مولّدة تلقائيًا
+	•	حظر التنفيذ تقنيًا
+	•	سجل تدقيق مترابط
+
+CTA: شاهد عرضًا عمليًا
+
+⸻
+
+SECTION 9 — PRICING ENTRY
+
+Title:
+ابدأ بإثبات القيمة
+
+Text:
+نوصي دائمًا بالبدء بتجربة مؤسسية (Pilot) ثم التوسّع حسب الاحتياج.
+
+CTA: اطلع على خطط التشغيل
+
+⸻
+
+SECTION 10 — CLOSING
+
+Final Statement (Large Text):
+
+XCircle Atlas هي طبقة ذكاء مؤسسي
+تدعم القرار ولا تنفّذه
+
+⸻
+
+🎨 DESIGN REQUIREMENTS
+	•	White Mode only
+	•	RTL layout
+	•	Calm enterprise typography
+	•	Subtle dividers & spacing
+	•	No animations beyond minimal hover
+	•	No marketing fluff
+
+⸻
+
+🚫 FORBIDDEN
+	•	Dark mode
+	•	Rebranding product terms
+	•	Execution / automation wording
+	•	Over-design or startup style
+	•	Feature descriptions beyond content
+
+⸻
+
+📦 DELIVERABLES
+
+Replit must deliver:
+	1.	Fully implemented Landing Page
+	2.	Responsive (desktop + mobile)
+	3.	Arabic RTL layout verified
+	4.	Screenshots of full page
+	5.	Written confirmation:
+“Landing page implemented as content/UI only. No backend or logic changes.”
+
+⸻
+
+🟢 SUCCESS DEFINITION
+
+The task is successful ONLY if:
+
+A CIO opens the page
+Immediately understands what the platform is
+Feels trust and clarity
+And does not confuse it with a dashboard or automation tool
