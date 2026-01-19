@@ -3,3 +3,8 @@ node_modules/
 *.log
 dist/
 .DS_Store
+
+# Playwright
+playwright-report/
+playwright/.cache/
+test-results/
