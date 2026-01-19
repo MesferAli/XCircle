@@ -4,6 +4,12 @@ import {
   waitForAppLoad,
   MOCK_RECOMMENDATIONS,
 } from './fixtures/test-utils';
+import {
+  PERFORMANCE_BUDGETS,
+  measurePageLoadTime,
+  measureActionTime,
+  assertWithinBudget,
+} from './fixtures/performance-utils';
 
 test.describe('Recommendations Page', () => {
   test.beforeEach(async ({ page }) => {
@@ -512,6 +518,102 @@ test.describe('Recommendations Page', () => {
       const searchInput = page.getByTestId('input-search-recommendations');
       const placeholder = await searchInput.getAttribute('placeholder');
       expect(placeholder).toBeTruthy();
+    });
+  });
+
+  test.describe('Performance Budgets', () => {
+    test('page must load within 1.5 seconds', async ({ page }) => {
+      await mockAuthenticatedState(page);
+
+      const loadTime = await measurePageLoadTime(page, '/recommendations');
+
+      console.log(`[PERF] Recommendations page load: ${loadTime}ms (budget: ${PERFORMANCE_BUDGETS.RECOMMENDATIONS_PAGE_LOAD}ms)`);
+
+      assertWithinBudget(
+        loadTime,
+        PERFORMANCE_BUDGETS.RECOMMENDATIONS_PAGE_LOAD,
+        'Recommendations page load'
+      );
+    });
+
+    test('approve action must complete within 1.5 seconds', async ({ page }) => {
+      const pendingRec = MOCK_RECOMMENDATIONS.find((r) => r.status === 'pending');
+      if (!pendingRec) {
+        test.skip();
+        return;
+      }
+
+      await page.waitForSelector(`[data-testid="button-review-${pendingRec.id}"]`, {
+        state: 'visible',
+      });
+
+      const { duration } = await measureActionTime(async () => {
+        await page.getByTestId(`button-review-${pendingRec.id}`).click();
+        await page.waitForSelector('[role="dialog"]', { state: 'visible' });
+        await page.getByTestId('button-approve').click();
+
+        await Promise.race([
+          page.waitForSelector('[role="dialog"]', { state: 'hidden' }),
+          page.waitForSelector('[class*="toast"]', { state: 'visible' }),
+        ]);
+      });
+
+      console.log(`[PERF] Approve action: ${duration}ms (budget: ${PERFORMANCE_BUDGETS.RECOMMENDATION_ACTION}ms)`);
+
+      assertWithinBudget(
+        duration,
+        PERFORMANCE_BUDGETS.RECOMMENDATION_ACTION,
+        'Recommendation approve action'
+      );
+    });
+
+    test('reject action must complete within 1.5 seconds', async ({ page }) => {
+      const pendingRec = MOCK_RECOMMENDATIONS.find((r) => r.status === 'pending');
+      if (!pendingRec) {
+        test.skip();
+        return;
+      }
+
+      await page.waitForSelector(`[data-testid="button-review-${pendingRec.id}"]`, {
+        state: 'visible',
+      });
+
+      const { duration } = await measureActionTime(async () => {
+        await page.getByTestId(`button-review-${pendingRec.id}`).click();
+        await page.waitForSelector('[role="dialog"]', { state: 'visible' });
+        await page.getByTestId('button-reject').click();
+
+        await Promise.race([
+          page.waitForSelector('[role="dialog"]', { state: 'hidden' }),
+          page.waitForSelector('[class*="toast"]', { state: 'visible' }),
+        ]);
+      });
+
+      console.log(`[PERF] Reject action: ${duration}ms (budget: ${PERFORMANCE_BUDGETS.RECOMMENDATION_ACTION}ms)`);
+
+      assertWithinBudget(
+        duration,
+        PERFORMANCE_BUDGETS.RECOMMENDATION_ACTION,
+        'Recommendation reject action'
+      );
+    });
+
+    test('filter must respond within 500ms', async ({ page }) => {
+      await page.waitForSelector('[data-testid^="recommendation-"]', { state: 'visible' });
+
+      const { duration } = await measureActionTime(async () => {
+        const searchInput = page.getByTestId('input-search-recommendations');
+        await searchInput.fill('Reorder');
+        await page.waitForTimeout(100);
+      });
+
+      console.log(`[PERF] Filter response: ${duration}ms (budget: ${PERFORMANCE_BUDGETS.FILTER_RESPONSE}ms)`);
+
+      assertWithinBudget(
+        duration,
+        PERFORMANCE_BUDGETS.FILTER_RESPONSE,
+        'Filter response'
+      );
     });
   });
 });

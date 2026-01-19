@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -5,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Download, FileText, FileSpreadsheet, Table } from "lucide-react";
+import { Download, FileText, FileSpreadsheet, Table, Loader2 } from "lucide-react";
 import { exportData, ExportColumn, ExportFormat } from "@/lib/export-utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -44,15 +45,16 @@ export function ExportButton({
   adminOnly = true,
 }: ExportButtonProps) {
   const { toast } = useToast();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
+  const [isExporting, setIsExporting] = useState(false);
 
   const isAdmin = user?.role === 'admin' || user?.platformRole === 'platform_admin';
-  
-  if (adminOnly && !isLoading && !isAdmin) {
+
+  if (adminOnly && !authLoading && !isAdmin) {
     return null;
   }
 
-  const handleExport = (format: ExportFormat) => {
+  const handleExport = async (format: ExportFormat) => {
     if (!data || data.length === 0) {
       toast({
         title: "No data to export",
@@ -62,8 +64,11 @@ export function ExportButton({
       return;
     }
 
+    setIsExporting(true);
+
     try {
-      exportData({
+      // exportData is now async - libraries are loaded on demand
+      await exportData({
         title,
         subtitle,
         filename: `${filename}-${new Date().toISOString().split('T')[0]}`,
@@ -83,23 +88,29 @@ export function ExportButton({
         description: "An error occurred while exporting data.",
         variant: "destructive",
       });
+    } finally {
+      setIsExporting(false);
     }
   };
 
   if (formats.length === 1) {
     const format = formats[0];
     const { label, icon: Icon } = formatLabels[format];
-    
+
     return (
       <Button
         variant={variant}
         size={size}
         onClick={() => handleExport(format)}
-        disabled={disabled || !data || data.length === 0}
+        disabled={disabled || isExporting || !data || data.length === 0}
         data-testid={`button-export-${format}`}
       >
-        <Icon className="mr-2 h-4 w-4" />
-        {label}
+        {isExporting ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Icon className="mr-2 h-4 w-4" />
+        )}
+        {isExporting ? 'Exporting...' : label}
       </Button>
     );
   }
@@ -110,11 +121,15 @@ export function ExportButton({
         <Button
           variant={variant}
           size={size}
-          disabled={disabled || !data || data.length === 0}
+          disabled={disabled || isExporting || !data || data.length === 0}
           data-testid="button-export"
         >
-          <Download className="mr-2 h-4 w-4" />
-          Export
+          {isExporting ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="mr-2 h-4 w-4" />
+          )}
+          {isExporting ? 'Exporting...' : 'Export'}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -124,6 +139,7 @@ export function ExportButton({
             <DropdownMenuItem
               key={format}
               onClick={() => handleExport(format)}
+              disabled={isExporting}
               data-testid={`menu-export-${format}`}
             >
               <Icon className="mr-2 h-4 w-4" />

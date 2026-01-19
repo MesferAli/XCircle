@@ -7,6 +7,13 @@ import {
   MOCK_CONNECTORS,
   MOCK_ANOMALIES,
 } from './fixtures/test-utils';
+import {
+  PERFORMANCE_BUDGETS,
+  measurePageLoadTime,
+  measureActionTime,
+  assertWithinBudget,
+  createApiTimingCollector,
+} from './fixtures/performance-utils';
 
 test.describe('Dashboard', () => {
   test.beforeEach(async ({ page }) => {
@@ -307,6 +314,59 @@ test.describe('Dashboard', () => {
       // Should see skeleton loaders
       const skeletons = page.locator('[class*="skeleton"]');
       await expect(skeletons.first()).toBeVisible();
+    });
+  });
+
+  test.describe('Performance Budgets', () => {
+    test('dashboard must fully load within 2 seconds', async ({ page }) => {
+      // Reset mocks for fresh timing
+      await mockAuthenticatedState(page);
+
+      const loadTime = await measurePageLoadTime(page, '/');
+
+      console.log(`[PERF] Dashboard load: ${loadTime}ms (budget: ${PERFORMANCE_BUDGETS.DASHBOARD_FULL_LOAD}ms)`);
+
+      assertWithinBudget(
+        loadTime,
+        PERFORMANCE_BUDGETS.DASHBOARD_FULL_LOAD,
+        'Dashboard full load'
+      );
+    });
+
+    test('API calls must complete within individual budgets', async ({ page }) => {
+      await mockAuthenticatedState(page);
+
+      const collector = createApiTimingCollector(page);
+      collector.start();
+
+      await page.goto('/');
+      await waitForAppLoad(page);
+
+      collector.stop();
+
+      // Verify /api/stats
+      const statsTiming = collector.getTimingForEndpoint('/api/stats');
+      if (statsTiming) {
+        console.log(`[PERF] /api/stats: ${statsTiming.duration}ms (budget: ${PERFORMANCE_BUDGETS.API_STATS}ms)`);
+        assertWithinBudget(statsTiming.duration, PERFORMANCE_BUDGETS.API_STATS, '/api/stats');
+      }
+
+      // Verify /api/recommendations
+      const recsTiming = collector.getTimingForEndpoint('/api/recommendations');
+      if (recsTiming) {
+        console.log(`[PERF] /api/recommendations: ${recsTiming.duration}ms (budget: ${PERFORMANCE_BUDGETS.API_RECOMMENDATIONS}ms)`);
+        assertWithinBudget(recsTiming.duration, PERFORMANCE_BUDGETS.API_RECOMMENDATIONS, '/api/recommendations');
+      }
+    });
+
+    test('navigation should be snappy (< 1 second)', async ({ page }) => {
+      const { duration } = await measureActionTime(async () => {
+        await page.getByTestId('link-view-all-recommendations').click();
+        await page.waitForURL(/\/recommendations/);
+      });
+
+      console.log(`[PERF] Navigation time: ${duration}ms`);
+      assertWithinBudget(duration, 1000, 'Dashboard navigation');
     });
   });
 });

@@ -1058,20 +1058,37 @@ export class DatabaseStorage implements IStorage {
     connectors: number;
     activeConnectors: number;
   }> {
-    const [itemsCount] = await db.select({ count: sql`count(*)` }).from(items).where(eq(items.tenantId, tenantId));
-    const [locationsCount] = await db.select({ count: sql`count(*)` }).from(locations).where(eq(locations.tenantId, tenantId));
-    const [recommendationsCount] = await db.select({ count: sql`count(*)` }).from(recommendations).where(eq(recommendations.tenantId, tenantId));
-    const [anomaliesCount] = await db.select({ count: sql`count(*)` }).from(anomalies).where(eq(anomalies.tenantId, tenantId));
-    const [connectorsCount] = await db.select({ count: sql`count(*)` }).from(connectors).where(eq(connectors.tenantId, tenantId));
-    const [activeConnectorsCount] = await db.select({ count: sql`count(*)` }).from(connectors).where(sql`${connectors.tenantId} = ${tenantId} AND ${connectors.status} = 'connected'`);
+    // OPTIMIZATION: Combine 6 separate queries into 2 parallel queries
+    // This reduces DB round-trips from 6 to 2, significantly improving response time
+    const [countsResult, connectorStats] = await Promise.all([
+      // Query 1: Get counts from items, locations, recommendations, anomalies in parallel subqueries
+      db.execute(sql`
+        SELECT
+          (SELECT COUNT(*) FROM items WHERE tenant_id = ${tenantId}) as items_count,
+          (SELECT COUNT(*) FROM locations WHERE tenant_id = ${tenantId}) as locations_count,
+          (SELECT COUNT(*) FROM recommendations WHERE tenant_id = ${tenantId}) as recommendations_count,
+          (SELECT COUNT(*) FROM anomalies WHERE tenant_id = ${tenantId}) as anomalies_count
+      `),
+      // Query 2: Get connector counts with conditional aggregation
+      db.execute(sql`
+        SELECT
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE status = 'connected') as active
+        FROM connectors
+        WHERE tenant_id = ${tenantId}
+      `),
+    ]);
+
+    const counts = countsResult.rows[0] as Record<string, string | number> || {};
+    const connectors_data = connectorStats.rows[0] as Record<string, string | number> || {};
 
     return {
-      items: Number(itemsCount?.count ?? 0),
-      locations: Number(locationsCount?.count ?? 0),
-      recommendations: Number(recommendationsCount?.count ?? 0),
-      anomalies: Number(anomaliesCount?.count ?? 0),
-      connectors: Number(connectorsCount?.count ?? 0),
-      activeConnectors: Number(activeConnectorsCount?.count ?? 0),
+      items: Number(counts.items_count ?? 0),
+      locations: Number(counts.locations_count ?? 0),
+      recommendations: Number(counts.recommendations_count ?? 0),
+      anomalies: Number(counts.anomalies_count ?? 0),
+      connectors: Number(connectors_data.total ?? 0),
+      activeConnectors: Number(connectors_data.active ?? 0),
     };
   }
 

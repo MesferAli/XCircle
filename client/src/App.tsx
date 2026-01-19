@@ -12,46 +12,78 @@ import { TrialBanner } from "@/components/trial-banner";
 import { TrialExpiredScreen } from "@/components/trial-expired-screen";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 
+/**
+ * OPTIMIZATION: Route-based code splitting with React.lazy()
+ *
+ * Pages are loaded on-demand when the user navigates to them.
+ * This reduces the initial bundle size significantly, improving
+ * Time to First Contentful Paint (FCP) and Largest Contentful Paint (LCP).
+ *
+ * Dashboard is NOT lazy-loaded as it's the default route.
+ */
+
+// Eagerly loaded - the main entry point
 import Dashboard from "@/pages/dashboard";
-import Connectors from "@/pages/connectors";
-import Mappings from "@/pages/mappings";
-import Recommendations from "@/pages/recommendations";
-import Anomalies from "@/pages/anomalies";
-import Capabilities from "@/pages/capabilities";
-import Policies from "@/pages/policies";
-import Audit from "@/pages/audit";
-import Onboarding from "@/pages/onboarding";
-import SettingsPage from "@/pages/settings";
-import Help from "@/pages/help";
-import NotFound from "@/pages/not-found";
-import LoginPage from "@/pages/login";
-import RegisterPage from "@/pages/register";
-import ForgotPasswordPage from "@/pages/forgot-password";
-import LandingPage from "@/pages/landing";
-import AdminCustomers from "@/pages/admin/customers";
-import SubscriptionPage from "@/pages/subscription";
+
+// Lazy loaded pages - only loaded when navigated to
+const Connectors = lazy(() => import("@/pages/connectors"));
+const Mappings = lazy(() => import("@/pages/mappings"));
+const Recommendations = lazy(() => import("@/pages/recommendations"));
+const Anomalies = lazy(() => import("@/pages/anomalies"));
+const Capabilities = lazy(() => import("@/pages/capabilities"));
+const Policies = lazy(() => import("@/pages/policies"));
+const Audit = lazy(() => import("@/pages/audit"));
+const Onboarding = lazy(() => import("@/pages/onboarding"));
+const SettingsPage = lazy(() => import("@/pages/settings"));
+const Help = lazy(() => import("@/pages/help"));
+const NotFound = lazy(() => import("@/pages/not-found"));
+const LoginPage = lazy(() => import("@/pages/login"));
+const RegisterPage = lazy(() => import("@/pages/register"));
+const ForgotPasswordPage = lazy(() => import("@/pages/forgot-password"));
+const LandingPage = lazy(() => import("@/pages/landing"));
+const AdminCustomers = lazy(() => import("@/pages/admin/customers"));
+const SubscriptionPage = lazy(() => import("@/pages/subscription"));
+
+// Eagerly loaded onboarding for fast initial experience
+import OnboardingEager from "@/pages/onboarding";
+
+/**
+ * Page loading fallback component
+ */
+function PageLoadingFallback() {
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Loading page...</p>
+      </div>
+    </div>
+  );
+}
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/connectors" component={Connectors} />
-      <Route path="/mappings" component={Mappings} />
-      <Route path="/recommendations" component={Recommendations} />
-      <Route path="/anomalies" component={Anomalies} />
-      <Route path="/capabilities" component={Capabilities} />
-      <Route path="/policies" component={Policies} />
-      <Route path="/audit" component={Audit} />
-      <Route path="/onboarding" component={Onboarding} />
-      <Route path="/settings" component={SettingsPage} />
-      <Route path="/subscription" component={SubscriptionPage} />
-      <Route path="/admin/customers" component={AdminCustomers} />
-      <Route path="/help" component={Help} />
-      <Route component={NotFound} />
-    </Switch>
+    <Suspense fallback={<PageLoadingFallback />}>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/dashboard" component={Dashboard} />
+        <Route path="/connectors" component={Connectors} />
+        <Route path="/mappings" component={Mappings} />
+        <Route path="/recommendations" component={Recommendations} />
+        <Route path="/anomalies" component={Anomalies} />
+        <Route path="/capabilities" component={Capabilities} />
+        <Route path="/policies" component={Policies} />
+        <Route path="/audit" component={Audit} />
+        <Route path="/onboarding" component={Onboarding} />
+        <Route path="/settings" component={SettingsPage} />
+        <Route path="/subscription" component={SubscriptionPage} />
+        <Route path="/admin/customers" component={AdminCustomers} />
+        <Route path="/help" component={Help} />
+        <Route component={NotFound} />
+      </Switch>
+    </Suspense>
   );
 }
 
@@ -74,7 +106,7 @@ interface TenantInfo {
 function AuthenticatedApp() {
   const [location, navigate] = useLocation();
   const [showMeetingForm, setShowMeetingForm] = useState(false);
-  
+
   const { data: onboardingStatus, isLoading: isOnboardingLoading, error: onboardingError } = useQuery<OnboardingStatus>({
     queryKey: ["/api/onboarding/status"],
     retry: 2,
@@ -102,7 +134,8 @@ function AuthenticatedApp() {
   }
 
   if (onboardingError || !onboardingStatus?.onboardingCompleted) {
-    return <Onboarding />;
+    // Use eagerly loaded onboarding for fast initial experience
+    return <OnboardingEager />;
   }
 
   // Check if trial has expired
@@ -113,7 +146,7 @@ function AuthenticatedApp() {
   if (isTrialExpired && tenant) {
     const companyType = tenant.companySize === "enterprise" ? "enterprise" : "smb";
     return (
-      <TrialExpiredScreen 
+      <TrialExpiredScreen
         companyType={companyType}
         onScheduleMeeting={() => {
           // Navigate to meeting scheduling or show form
@@ -156,13 +189,15 @@ function LoadingScreen() {
 
 function UnauthenticatedRouter() {
   return (
-    <Switch>
-      <Route path="/" component={LandingPage} />
-      <Route path="/login" component={LoginPage} />
-      <Route path="/register" component={RegisterPage} />
-      <Route path="/forgot-password" component={ForgotPasswordPage} />
-      <Route component={LandingPage} />
-    </Switch>
+    <Suspense fallback={<LoadingScreen />}>
+      <Switch>
+        <Route path="/" component={LandingPage} />
+        <Route path="/login" component={LoginPage} />
+        <Route path="/register" component={RegisterPage} />
+        <Route path="/forgot-password" component={ForgotPasswordPage} />
+        <Route component={LandingPage} />
+      </Switch>
+    </Suspense>
   );
 }
 

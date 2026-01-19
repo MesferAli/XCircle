@@ -1,6 +1,9 @@
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+/**
+ * Export Utilities with Lazy Loading
+ *
+ * OPTIMIZATION: Heavy libraries (jsPDF ~200KB, XLSX ~350KB) are loaded dynamically
+ * only when the user actually exports data. This reduces initial bundle size by ~550KB.
+ */
 
 export type ExportFormat = 'pdf' | 'excel' | 'csv';
 
@@ -31,9 +34,18 @@ function formatValue(value: unknown): string {
   return String(value);
 }
 
-export function exportToPDF(options: Omit<ExportOptions, 'format'>): void {
+/**
+ * Export to PDF - lazily loads jsPDF and jspdf-autotable
+ */
+export async function exportToPDF(options: Omit<ExportOptions, 'format'>): Promise<void> {
   const { title, subtitle, filename, columns, data, orientation = 'portrait' } = options;
-  
+
+  // Dynamic import - only loaded when user exports to PDF
+  const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ]);
+
   const doc = new jsPDF({
     orientation,
     unit: 'mm',
@@ -57,7 +69,7 @@ export function exportToPDF(options: Omit<ExportOptions, 'format'>): void {
   const dateStr = new Date().toLocaleString('ar-SA');
   doc.text(`Generated: ${dateStr}`, 14, subtitle ? 35 : 28);
 
-  const tableData = data.map(row => 
+  const tableData = data.map(row =>
     columns.map(col => formatValue(row[col.key]))
   );
 
@@ -101,8 +113,14 @@ export function exportToPDF(options: Omit<ExportOptions, 'format'>): void {
   doc.save(`${filename}.pdf`);
 }
 
-export function exportToExcel(options: Omit<ExportOptions, 'format'>): void {
+/**
+ * Export to Excel - lazily loads xlsx library
+ */
+export async function exportToExcel(options: Omit<ExportOptions, 'format'>): Promise<void> {
   const { title, filename, columns, data } = options;
+
+  // Dynamic import - only loaded when user exports to Excel
+  const XLSX = await import('xlsx');
 
   const worksheetData = [
     columns.map(col => col.header),
@@ -129,11 +147,14 @@ export function exportToExcel(options: Omit<ExportOptions, 'format'>): void {
   XLSX.writeFile(workbook, `${filename}.xlsx`);
 }
 
+/**
+ * Export to CSV - no external dependencies, always synchronous
+ */
 export function exportToCSV(options: Omit<ExportOptions, 'format'>): void {
   const { filename, columns, data } = options;
 
   const headers = columns.map(col => `"${col.header}"`).join(',');
-  const rows = data.map(row => 
+  const rows = data.map(row =>
     columns.map(col => {
       const value = formatValue(row[col.key]);
       return `"${value.replace(/"/g, '""')}"`;
@@ -143,22 +164,25 @@ export function exportToCSV(options: Omit<ExportOptions, 'format'>): void {
   const csvContent = [headers, ...rows].join('\n');
   const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
-  
+
   const link = document.createElement('a');
   link.href = url;
   link.download = `${filename}.csv`;
   link.click();
-  
+
   URL.revokeObjectURL(url);
 }
 
-export function exportData(options: ExportOptions): void {
+/**
+ * Main export function - handles all formats with lazy loading
+ */
+export async function exportData(options: ExportOptions): Promise<void> {
   switch (options.format) {
     case 'pdf':
-      exportToPDF(options);
+      await exportToPDF(options);
       break;
     case 'excel':
-      exportToExcel(options);
+      await exportToExcel(options);
       break;
     case 'csv':
       exportToCSV(options);
@@ -166,6 +190,7 @@ export function exportData(options: ExportOptions): void {
   }
 }
 
+// Column definitions for different data types
 export const recommendationColumns: ExportColumn[] = [
   { header: 'Title', key: 'title', width: 30 },
   { header: 'Type', key: 'type', width: 12 },
