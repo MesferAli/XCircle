@@ -7,7 +7,7 @@ import { aiEngine } from "./ai-engine";
 import { connectorEngine } from "./connector-engine";
 import { mappingEngine } from "./mapping-engine";
 import { policyEngine } from "./policy-engine";
-import { mappingConfigPayloadSchema, policyContextSchema, tenants, useCaseFeatures, meetingRequests, insertMeetingRequestSchema } from "@shared/schema";
+import { mappingConfigPayloadSchema, policyContextSchema, tenants, useCaseFeatures, meetingRequests, insertMeetingRequestSchema, productivitySkills as productivitySkillsTable, userSkillProgress as userSkillProgressTable } from "@shared/schema";
 import type { PolicyContext, User, PolicyResult, Recommendation } from "@shared/schema";
 import { requireCapability, getCapabilitiesForRole, checkCapabilities } from "./capability-guard";
 import { blockAllExecution, EXECUTION_MODE } from "./execution-lock";
@@ -15,6 +15,182 @@ import { setupAuth, isAuthenticated } from "./auth/customAuth";
 export type { Capability } from "./capability-guard";
 export { requireCapability, getCapabilitiesForRole, checkCapabilities };
 export { EXECUTION_MODE } from "./execution-lock";
+
+// Default productivity skills templates inspired by claude-code-templates
+const defaultProductivitySkills = [
+  {
+    name: "Task Automation with Scripts",
+    nameAr: "أتمتة المهام بالبرمجة",
+    description: "Learn to automate repetitive tasks using scripts and cron jobs to save hours every week.",
+    descriptionAr: "تعلم أتمتة المهام المتكررة باستخدام السكربتات والمهام المجدولة لتوفير ساعات أسبوعياً.",
+    category: "automation",
+    level: "intermediate",
+    icon: "Zap",
+    estimatedHours: 4,
+    steps: [
+      { title: "Identify Repetitive Tasks", titleAr: "تحديد المهام المتكررة", description: "Audit your daily workflow to find tasks that can be automated.", descriptionAr: "راجع سير عملك اليومي لإيجاد المهام القابلة للأتمتة.", order: 1 },
+      { title: "Write Your First Script", titleAr: "كتابة أول سكربت", description: "Create a simple automation script for a common task.", descriptionAr: "أنشئ سكربت أتمتة بسيط لمهمة شائعة.", order: 2 },
+      { title: "Schedule Automation", titleAr: "جدولة الأتمتة", description: "Set up scheduled execution for your automation scripts.", descriptionAr: "إعداد التنفيذ المجدول لسكربتات الأتمتة.", order: 3 },
+    ],
+    resources: [],
+    sortOrder: 1,
+  },
+  {
+    name: "AI-Powered Code Review",
+    nameAr: "مراجعة الكود بالذكاء الاصطناعي",
+    description: "Use AI tools to perform thorough code reviews, catch bugs, and improve code quality.",
+    descriptionAr: "استخدم أدوات الذكاء الاصطناعي لمراجعة الكود بشكل شامل واكتشاف الأخطاء وتحسين الجودة.",
+    category: "ai_tools",
+    level: "advanced",
+    icon: "Brain",
+    estimatedHours: 3,
+    steps: [
+      { title: "Set Up AI Review Tools", titleAr: "إعداد أدوات المراجعة بالذكاء الاصطناعي", description: "Configure AI-powered code review tools in your development environment.", descriptionAr: "تهيئة أدوات مراجعة الكود بالذكاء الاصطناعي في بيئة التطوير.", order: 1 },
+      { title: "Review Patterns & Anti-patterns", titleAr: "مراجعة الأنماط والأنماط المضادة", description: "Learn to identify common patterns AI tools flag during review.", descriptionAr: "تعلم تحديد الأنماط الشائعة التي تكشفها أدوات الذكاء الاصطناعي.", order: 2 },
+      { title: "Integrate into CI/CD", titleAr: "الدمج في خط الإنتاج", description: "Add AI code review to your continuous integration pipeline.", descriptionAr: "أضف مراجعة الكود بالذكاء الاصطناعي إلى خط التكامل المستمر.", order: 3 },
+    ],
+    resources: [],
+    sortOrder: 2,
+  },
+  {
+    name: "Effective Time Blocking",
+    nameAr: "تقنية تقسيم الوقت",
+    description: "Master the time blocking technique to maximize focused work and minimize context switching.",
+    descriptionAr: "أتقن تقنية تقسيم الوقت لتعظيم العمل المركز وتقليل التشتت.",
+    category: "time_management",
+    level: "beginner",
+    icon: "Clock",
+    estimatedHours: 2,
+    steps: [
+      { title: "Audit Your Current Schedule", titleAr: "تدقيق جدولك الحالي", description: "Track how you spend time for one week to identify patterns.", descriptionAr: "تتبع كيف تقضي وقتك لمدة أسبوع لتحديد الأنماط.", order: 1 },
+      { title: "Create Time Blocks", titleAr: "إنشاء كتل زمنية", description: "Design your ideal day using time blocks for different task types.", descriptionAr: "صمم يومك المثالي باستخدام كتل زمنية لأنواع المهام المختلفة.", order: 2 },
+      { title: "Protect Your Blocks", titleAr: "حماية كتلك الزمنية", description: "Learn strategies to defend your time blocks from interruptions.", descriptionAr: "تعلم استراتيجيات لحماية كتلك الزمنية من المقاطعات.", order: 3 },
+    ],
+    resources: [],
+    sortOrder: 3,
+  },
+  {
+    name: "Data-Driven Decision Making",
+    nameAr: "اتخاذ القرارات المبنية على البيانات",
+    description: "Learn to analyze data effectively and make informed decisions using dashboards and metrics.",
+    descriptionAr: "تعلم تحليل البيانات بفعالية واتخاذ قرارات مستنيرة باستخدام لوحات المعلومات والمقاييس.",
+    category: "data_analysis",
+    level: "intermediate",
+    icon: "BarChart3",
+    estimatedHours: 5,
+    steps: [
+      { title: "Define Key Metrics", titleAr: "تحديد المقاييس الرئيسية", description: "Identify the KPIs that matter most for your role and team.", descriptionAr: "حدد مؤشرات الأداء الرئيسية الأكثر أهمية لدورك وفريقك.", order: 1 },
+      { title: "Build a Dashboard", titleAr: "بناء لوحة معلومات", description: "Create a dashboard that visualizes your key metrics in real-time.", descriptionAr: "أنشئ لوحة معلومات تعرض مقاييسك الرئيسية في الوقت الفعلي.", order: 2 },
+      { title: "Analyze Trends", titleAr: "تحليل الاتجاهات", description: "Learn to spot trends and anomalies in your data.", descriptionAr: "تعلم اكتشاف الاتجاهات والحالات الشاذة في بياناتك.", order: 3 },
+      { title: "Present Findings", titleAr: "عرض النتائج", description: "Communicate data insights effectively to stakeholders.", descriptionAr: "تواصل رؤى البيانات بفعالية لأصحاب المصلحة.", order: 4 },
+    ],
+    resources: [],
+    sortOrder: 4,
+  },
+  {
+    name: "Async Communication Mastery",
+    nameAr: "إتقان التواصل غير المتزامن",
+    description: "Write clear async messages, reduce unnecessary meetings, and improve team collaboration.",
+    descriptionAr: "اكتب رسائل واضحة غير متزامنة، قلل الاجتماعات غير الضرورية، وحسّن التعاون مع الفريق.",
+    category: "communication",
+    level: "beginner",
+    icon: "MessageSquare",
+    estimatedHours: 2,
+    steps: [
+      { title: "Write Clear Updates", titleAr: "كتابة تحديثات واضحة", description: "Structure your written updates for maximum clarity and action.", descriptionAr: "هيكل تحديثاتك المكتوبة لأقصى وضوح وفعالية.", order: 1 },
+      { title: "Reduce Meeting Load", titleAr: "تقليل عبء الاجتماعات", description: "Identify meetings that can be replaced with async communication.", descriptionAr: "حدد الاجتماعات التي يمكن استبدالها بالتواصل غير المتزامن.", order: 2 },
+      { title: "Document Decisions", titleAr: "توثيق القرارات", description: "Create a system for documenting and sharing decisions asynchronously.", descriptionAr: "أنشئ نظاماً لتوثيق ومشاركة القرارات بشكل غير متزامن.", order: 3 },
+    ],
+    resources: [],
+    sortOrder: 5,
+  },
+  {
+    name: "Agile Project Management",
+    nameAr: "إدارة المشاريع الرشيقة",
+    description: "Apply agile methodologies to manage projects efficiently with sprints, standups, and retrospectives.",
+    descriptionAr: "طبق منهجيات أجايل لإدارة المشاريع بكفاءة مع السبرنتات والاجتماعات اليومية والمراجعات.",
+    category: "project_management",
+    level: "intermediate",
+    icon: "Target",
+    estimatedHours: 6,
+    steps: [
+      { title: "Understand Agile Principles", titleAr: "فهم مبادئ أجايل", description: "Learn the core principles behind agile project management.", descriptionAr: "تعلم المبادئ الأساسية وراء إدارة المشاريع الرشيقة.", order: 1 },
+      { title: "Set Up Sprint Workflow", titleAr: "إعداد سير عمل السبرنت", description: "Create a sprint-based workflow for your team.", descriptionAr: "أنشئ سير عمل قائم على السبرنتات لفريقك.", order: 2 },
+      { title: "Run Effective Standups", titleAr: "إدارة اجتماعات يومية فعالة", description: "Conduct focused daily standups that keep the team aligned.", descriptionAr: "أدر اجتماعات يومية مركزة تبقي الفريق متوافقاً.", order: 3 },
+      { title: "Conduct Retrospectives", titleAr: "إجراء المراجعات", description: "Use retrospectives to continuously improve team processes.", descriptionAr: "استخدم المراجعات لتحسين عمليات الفريق باستمرار.", order: 4 },
+    ],
+    resources: [],
+    sortOrder: 6,
+  },
+  {
+    name: "Prompt Engineering for Productivity",
+    nameAr: "هندسة الأوامر للإنتاجية",
+    description: "Master prompt engineering to get better results from AI assistants and automate complex workflows.",
+    descriptionAr: "أتقن هندسة الأوامر للحصول على نتائج أفضل من مساعدي الذكاء الاصطناعي وأتمتة سير العمل المعقدة.",
+    category: "ai_tools",
+    level: "beginner",
+    icon: "Sparkles",
+    estimatedHours: 3,
+    steps: [
+      { title: "Understand Prompt Basics", titleAr: "فهم أساسيات الأوامر", description: "Learn the fundamentals of writing effective prompts.", descriptionAr: "تعلم أساسيات كتابة أوامر فعالة.", order: 1 },
+      { title: "Apply Prompt Patterns", titleAr: "تطبيق أنماط الأوامر", description: "Use proven prompt patterns like chain-of-thought and few-shot examples.", descriptionAr: "استخدم أنماط الأوامر المثبتة مثل سلسلة التفكير والأمثلة القليلة.", order: 2 },
+      { title: "Build Reusable Templates", titleAr: "بناء قوالب قابلة لإعادة الاستخدام", description: "Create a library of reusable prompt templates for common tasks.", descriptionAr: "أنشئ مكتبة من قوالب الأوامر القابلة لإعادة الاستخدام للمهام الشائعة.", order: 3 },
+    ],
+    resources: [],
+    sortOrder: 7,
+  },
+  {
+    name: "Database Query Optimization",
+    nameAr: "تحسين استعلامات قواعد البيانات",
+    description: "Optimize database queries to improve application performance and reduce response times.",
+    descriptionAr: "حسّن استعلامات قواعد البيانات لتحسين أداء التطبيق وتقليل أوقات الاستجابة.",
+    category: "data_analysis",
+    level: "advanced",
+    icon: "Database",
+    estimatedHours: 4,
+    steps: [
+      { title: "Analyze Slow Queries", titleAr: "تحليل الاستعلامات البطيئة", description: "Identify and profile slow-running database queries.", descriptionAr: "حدد وحلل الاستعلامات البطيئة في قاعدة البيانات.", order: 1 },
+      { title: "Apply Indexing Strategies", titleAr: "تطبيق استراتيجيات الفهرسة", description: "Learn when and how to add indexes for optimal query performance.", descriptionAr: "تعلم متى وكيف تضيف الفهارس لأداء استعلام أمثل.", order: 2 },
+      { title: "Optimize Query Patterns", titleAr: "تحسين أنماط الاستعلام", description: "Rewrite queries using best practices for better performance.", descriptionAr: "أعد كتابة الاستعلامات باستخدام أفضل الممارسات لأداء أفضل.", order: 3 },
+    ],
+    resources: [],
+    sortOrder: 8,
+  },
+  {
+    name: "CI/CD Pipeline Mastery",
+    nameAr: "إتقان خطوط التكامل والنشر المستمر",
+    description: "Build and optimize CI/CD pipelines to automate testing, building, and deployment processes.",
+    descriptionAr: "ابنِ وحسّن خطوط CI/CD لأتمتة عمليات الاختبار والبناء والنشر.",
+    category: "automation",
+    level: "advanced",
+    icon: "GitBranch",
+    estimatedHours: 5,
+    steps: [
+      { title: "Design Pipeline Architecture", titleAr: "تصميم بنية خط الإنتاج", description: "Plan the stages and steps of your CI/CD pipeline.", descriptionAr: "خطط لمراحل وخطوات خط التكامل والنشر المستمر.", order: 1 },
+      { title: "Implement Automated Tests", titleAr: "تنفيذ الاختبارات الآلية", description: "Add automated testing stages to your pipeline.", descriptionAr: "أضف مراحل الاختبار الآلي إلى خط الإنتاج.", order: 2 },
+      { title: "Configure Deployments", titleAr: "تهيئة عمليات النشر", description: "Set up automated deployment with rollback capabilities.", descriptionAr: "أعد عمليات النشر الآلي مع إمكانيات التراجع.", order: 3 },
+    ],
+    resources: [],
+    sortOrder: 9,
+  },
+  {
+    name: "Stakeholder Communication",
+    nameAr: "التواصل مع أصحاب المصلحة",
+    description: "Develop skills to communicate technical concepts to non-technical stakeholders effectively.",
+    descriptionAr: "طور مهارات التواصل لشرح المفاهيم التقنية لأصحاب المصلحة غير التقنيين بفعالية.",
+    category: "communication",
+    level: "intermediate",
+    icon: "Users",
+    estimatedHours: 3,
+    steps: [
+      { title: "Know Your Audience", titleAr: "اعرف جمهورك", description: "Learn to tailor your message to different stakeholder groups.", descriptionAr: "تعلم تكييف رسالتك لمجموعات أصحاب المصلحة المختلفة.", order: 1 },
+      { title: "Create Executive Summaries", titleAr: "إنشاء ملخصات تنفيذية", description: "Write concise summaries that highlight business impact.", descriptionAr: "اكتب ملخصات موجزة تبرز التأثير على الأعمال.", order: 2 },
+      { title: "Handle Difficult Conversations", titleAr: "التعامل مع المحادثات الصعبة", description: "Navigate challenging discussions about timelines, resources, and trade-offs.", descriptionAr: "تعامل مع المناقشات الصعبة حول الجداول الزمنية والموارد والمقايضات.", order: 3 },
+    ],
+    resources: [],
+    sortOrder: 10,
+  },
+];
 
 interface PolicyRequest extends Request {
   policyResult?: PolicyResult;
@@ -3127,6 +3303,114 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         error: "Failed to check feature access",
         message: error instanceof Error ? error.message : "Unknown error",
       });
+    }
+  });
+
+  // ==================== PRODUCTIVITY SKILLS ====================
+
+  // Get all productivity skills for tenant
+  app.get("/api/productivity-skills", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+
+      const skills = await db.select().from(productivitySkillsTable).where(eq(productivitySkillsTable.tenantId, tenantId));
+      res.json(skills);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch productivity skills", message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Get seed/default productivity skills (no tenant required, returns templates)
+  app.get("/api/productivity-skills/templates", isAuthenticated, async (_req: Request, res: Response) => {
+    try {
+      res.json(defaultProductivitySkills);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch skill templates" });
+    }
+  });
+
+  // Seed default skills for tenant
+  app.post("/api/productivity-skills/seed", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+
+      // Check if already seeded
+      const existing = await db.select().from(productivitySkillsTable).where(eq(productivitySkillsTable.tenantId, tenantId));
+      if (existing.length > 0) {
+        return res.json({ message: "Skills already seeded", count: existing.length });
+      }
+
+      const seeded = [];
+      for (const skill of defaultProductivitySkills) {
+        const [inserted] = await db.insert(productivitySkillsTable).values({ ...skill, tenantId }).returning();
+        seeded.push(inserted);
+      }
+      res.json({ message: "Skills seeded successfully", count: seeded.length, skills: seeded });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to seed skills", message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Get user's skill progress
+  app.get("/api/productivity-skills/progress", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      const userId = getAuthenticatedUserId(req);
+      if (!tenantId || !userId) return res.status(401).json({ error: "Authentication required" });
+
+      const progress = await db.select().from(userSkillProgressTable).where(eq(userSkillProgressTable.userId, userId));
+      res.json(progress);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch skill progress", message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Update user's skill progress
+  app.post("/api/productivity-skills/:skillId/progress", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      const userId = getAuthenticatedUserId(req);
+      if (!tenantId || !userId) return res.status(401).json({ error: "Authentication required" });
+
+      const { skillId } = req.params;
+      const { status, completedSteps, progressPercent, notes } = req.body;
+
+      // Check if progress record exists
+      const existing = await db.select().from(userSkillProgressTable)
+        .where(eq(userSkillProgressTable.userId, userId));
+      const existingProgress = existing.find(p => p.skillId === skillId);
+
+      if (existingProgress) {
+        const [updated] = await db.update(userSkillProgressTable)
+          .set({
+            status: status || existingProgress.status,
+            completedSteps: completedSteps || existingProgress.completedSteps,
+            progressPercent: progressPercent ?? existingProgress.progressPercent,
+            notes: notes ?? existingProgress.notes,
+            startedAt: existingProgress.startedAt || (status === "in_progress" ? new Date() : null),
+            completedAt: status === "completed" ? new Date() : null,
+            updatedAt: new Date(),
+          })
+          .where(eq(userSkillProgressTable.id, existingProgress.id))
+          .returning();
+        return res.json(updated);
+      }
+
+      const [created] = await db.insert(userSkillProgressTable).values({
+        userId,
+        skillId,
+        tenantId,
+        status: status || "in_progress",
+        completedSteps: completedSteps || [],
+        progressPercent: progressPercent || 0,
+        notes,
+        startedAt: new Date(),
+      }).returning();
+      res.json(created);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update skill progress", message: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 }
