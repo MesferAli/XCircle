@@ -32,6 +32,7 @@ import ForgotPasswordPage from "@/pages/forgot-password";
 import LandingPage from "@/pages/landing";
 import AdminCustomers from "@/pages/admin/customers";
 import SubscriptionPage from "@/pages/subscription";
+import ProductivitySkills from "@/pages/productivity-skills";
 
 function Router() {
   return (
@@ -49,6 +50,7 @@ function Router() {
       <Route path="/settings" component={SettingsPage} />
       <Route path="/subscription" component={SubscriptionPage} />
       <Route path="/admin/customers" component={AdminCustomers} />
+      <Route path="/productivity-skills" component={ProductivitySkills} />
       <Route path="/help" component={Help} />
       <Route component={NotFound} />
     </Switch>

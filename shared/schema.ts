@@ -826,6 +826,85 @@ export type SourceType = "items" | "locations" | "stock_balances" | "stock_movem
 export type TargetEntity = "items" | "locations" | "stockBalances" | "stockMovements";
 export type TransformType = "toString" | "toNumber" | "toDate" | "uppercase" | "lowercase" | "trim";
 
+// ==================== PRODUCTIVITY SKILLS ====================
+export const productivitySkillCategories = [
+  "time_management",
+  "automation",
+  "data_analysis",
+  "communication",
+  "project_management",
+  "ai_tools",
+] as const;
+export type ProductivitySkillCategory = typeof productivitySkillCategories[number];
+
+export const productivitySkillLevels = ["beginner", "intermediate", "advanced", "expert"] as const;
+export type ProductivitySkillLevel = typeof productivitySkillLevels[number];
+
+export const productivitySkills = pgTable("productivity_skills", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  name: text("name").notNull(),
+  nameAr: text("name_ar").notNull(),
+  description: text("description").notNull(),
+  descriptionAr: text("description_ar").notNull(),
+  category: text("category").notNull(), // time_management, automation, data_analysis, communication, project_management, ai_tools
+  level: text("level").notNull().default("beginner"), // beginner, intermediate, advanced, expert
+  icon: text("icon"), // lucide icon name
+  estimatedHours: integer("estimated_hours").default(1),
+  steps: jsonb("steps").default([]), // Array of step objects { title, titleAr, description, descriptionAr, order }
+  resources: jsonb("resources").default([]), // Array of { url, title, type }
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertProductivitySkillSchema = createInsertSchema(productivitySkills).pick({
+  tenantId: true,
+  name: true,
+  nameAr: true,
+  description: true,
+  descriptionAr: true,
+  category: true,
+  level: true,
+  icon: true,
+  estimatedHours: true,
+  steps: true,
+  resources: true,
+  sortOrder: true,
+});
+
+export type InsertProductivitySkill = z.infer<typeof insertProductivitySkillSchema>;
+export type ProductivitySkill = typeof productivitySkills.$inferSelect;
+
+// User Skill Progress
+export const userSkillProgress = pgTable("user_skill_progress", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  skillId: varchar("skill_id").notNull(),
+  tenantId: varchar("tenant_id").notNull(),
+  status: text("status").notNull().default("not_started"), // not_started, in_progress, completed
+  completedSteps: jsonb("completed_steps").default([]), // Array of step indices
+  progressPercent: integer("progress_percent").default(0),
+  startedAt: timestamp("started_at"),
+  completedAt: timestamp("completed_at"),
+  notes: text("notes"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertUserSkillProgressSchema = createInsertSchema(userSkillProgress).pick({
+  userId: true,
+  skillId: true,
+  tenantId: true,
+  status: true,
+  completedSteps: true,
+  progressPercent: true,
+  notes: true,
+});
+
+export type InsertUserSkillProgress = z.infer<typeof insertUserSkillProgressSchema>;
+export type UserSkillProgress = typeof userSkillProgress.$inferSelect;
+
 // ==================== USE CASE FEATURES MAPPING ====================
 // Defines which features are available for each use case
 export const useCaseFeatures: Record<UseCaseType, string[]> = {
@@ -848,6 +927,7 @@ export const allPlatformFeatures = [
   "anomalies",
   "policies",
   "audit",
+  "productivity_skills",
 ] as const;
 
 export type PlatformFeature = typeof allPlatformFeatures[number];

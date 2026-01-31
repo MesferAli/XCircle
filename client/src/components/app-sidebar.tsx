@@ -9,6 +9,7 @@ import {
   Sparkles,
   AlertTriangle,
   Settings,
+  Rocket,
   HelpCircle,
   CircleDot,
 } from "lucide-react";
@@ -46,6 +47,7 @@ export function AppSidebar() {
   const aiNavItems = [
     { title: t.nav.recommendations, url: "/recommendations", icon: Lightbulb, badge: "3", testId: "nav-recommendations" },
     { title: t.nav.anomalies, url: "/anomalies", icon: AlertTriangle, badge: "1", testId: "nav-anomalies" },
+    { title: t.nav.productivitySkills, url: "/productivity-skills", icon: Rocket, testId: "nav-productivity-skills" },
   ];
 
   const governanceNavItems = [
