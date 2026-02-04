@@ -966,6 +966,127 @@ export const insertDataAgentKnowledgeSchema = createInsertSchema(dataAgentKnowle
 export type InsertDataAgentKnowledge = z.infer<typeof insertDataAgentKnowledgeSchema>;
 export type DataAgentKnowledge = typeof dataAgentKnowledge.$inferSelect;
 
+// ==================== DATA AGENT - 6 CONTEXT LAYERS (Dash-inspired) ====================
+
+// Layer 1: Table Metadata (Schema & Relationships)
+export const dataAgentTableMetadata = pgTable("data_agent_table_metadata", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  tableName: text("table_name").notNull(),
+  tableNameAr: text("table_name_ar"),
+  description: text("description"),
+  descriptionAr: text("description_ar"),
+  columns: jsonb("columns").default([]), // Array of { name, type, description, descriptionAr, isPrimaryKey, isForeignKey, references }
+  relationships: jsonb("relationships").default([]), // Array of { type: 'one-to-many'|'many-to-one', relatedTable, foreignKey }
+  sampleQueries: jsonb("sample_queries").default([]), // Array of example SQL queries for this table
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type DataAgentTableMetadata = typeof dataAgentTableMetadata.$inferSelect;
+
+// Layer 2: Human Annotations (Metrics & Business Rules)
+export const dataAgentAnnotations = pgTable("data_agent_annotations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  targetType: text("target_type").notNull(), // table, column, metric, rule
+  targetName: text("target_name").notNull(), // e.g., "orders.total_amount" or "monthly_revenue"
+  annotationType: text("annotation_type").notNull(), // metric_definition, business_rule, calculation, warning
+  title: text("title").notNull(),
+  titleAr: text("title_ar"),
+  content: text("content").notNull(), // The annotation content (formula, rule, etc.)
+  contentAr: text("content_ar"),
+  sqlFragment: text("sql_fragment"), // Optional SQL snippet for this annotation
+  priority: integer("priority").default(0), // Higher = more important
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type DataAgentAnnotation = typeof dataAgentAnnotations.$inferSelect;
+
+// Layer 3: Query Patterns (Proven SQL Templates)
+export const dataAgentQueryPatterns = pgTable("data_agent_query_patterns", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  name: text("name").notNull(),
+  nameAr: text("name_ar"),
+  category: text("category").notNull(), // aggregation, filtering, joining, time_series, comparison
+  intentPatterns: jsonb("intent_patterns").default([]), // Array of natural language patterns that match this query
+  sqlTemplate: text("sql_template").notNull(), // SQL with {{placeholders}}
+  parameters: jsonb("parameters").default([]), // Array of { name, type, description, defaultValue }
+  exampleQuestions: jsonb("example_questions").default([]), // Array of { ar, en }
+  usageCount: integer("usage_count").default(0),
+  successRate: integer("success_rate").default(100),
+  avgExecutionMs: integer("avg_execution_ms"),
+  isVerified: boolean("is_verified").default(false),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type DataAgentQueryPattern = typeof dataAgentQueryPatterns.$inferSelect;
+
+// Layer 4: Institutional Knowledge (Documentation & Context)
+export const dataAgentInstitutionalKnowledge = pgTable("data_agent_institutional_knowledge", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  category: text("category").notNull(), // terminology, process, policy, faq, best_practice
+  title: text("title").notNull(),
+  titleAr: text("title_ar"),
+  content: text("content").notNull(),
+  contentAr: text("content_ar"),
+  keywords: jsonb("keywords").default([]), // Array of keywords for matching
+  keywordsAr: jsonb("keywords_ar").default([]),
+  relatedTables: jsonb("related_tables").default([]), // Array of table names this knowledge relates to
+  relevanceScore: integer("relevance_score").default(50), // 0-100, used for ranking
+  isActive: boolean("is_active").default(true),
+  createdBy: varchar("created_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type DataAgentInstitutionalKnowledge = typeof dataAgentInstitutionalKnowledge.$inferSelect;
+
+// Layer 5: Learnings (Error Patterns & Fixes)
+export const dataAgentLearnings = pgTable("data_agent_learnings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  learningType: text("learning_type").notNull(), // error_fix, optimization, alternative, clarification
+  triggerPattern: text("trigger_pattern").notNull(), // The error message or question pattern that triggers this
+  originalSql: text("original_sql"), // The SQL that caused the issue
+  correctedSql: text("corrected_sql"), // The fixed/optimized SQL
+  explanation: text("explanation"),
+  explanationAr: text("explanation_ar"),
+  autoApply: boolean("auto_apply").default(false), // Whether to automatically apply this fix
+  confidenceScore: integer("confidence_score").default(50), // 0-100
+  appliedCount: integer("applied_count").default(0),
+  successCount: integer("success_count").default(0),
+  sourceQueryId: varchar("source_query_id"), // Reference to the original query that created this learning
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type DataAgentLearning = typeof dataAgentLearnings.$inferSelect;
+
+// Layer 6: Runtime Context (Session & Real-time Data)
+export const dataAgentRuntimeContext = pgTable("data_agent_runtime_context", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  contextType: text("context_type").notNull(), // filter, preference, recent_table, recent_metric, session_var
+  contextKey: text("context_key").notNull(),
+  contextValue: jsonb("context_value").notNull(),
+  expiresAt: timestamp("expires_at"), // Optional expiration for temporary context
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export type DataAgentRuntimeContext = typeof dataAgentRuntimeContext.$inferSelect;
+
 // ==================== USE CASE FEATURES MAPPING ====================
 // Defines which features are available for each use case
 export const useCaseFeatures: Record<UseCaseType, string[]> = {

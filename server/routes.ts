@@ -7,7 +7,7 @@ import { aiEngine } from "./ai-engine";
 import { connectorEngine } from "./connector-engine";
 import { mappingEngine } from "./mapping-engine";
 import { policyEngine } from "./policy-engine";
-import { mappingConfigPayloadSchema, policyContextSchema, tenants, useCaseFeatures, meetingRequests, insertMeetingRequestSchema, productivitySkills as productivitySkillsTable, userSkillProgress as userSkillProgressTable, dataAgentQueries as dataAgentQueriesTable, dataAgentKnowledge as dataAgentKnowledgeTable } from "@shared/schema";
+import { mappingConfigPayloadSchema, policyContextSchema, tenants, useCaseFeatures, meetingRequests, insertMeetingRequestSchema, productivitySkills as productivitySkillsTable, userSkillProgress as userSkillProgressTable, dataAgentQueries as dataAgentQueriesTable, dataAgentKnowledge as dataAgentKnowledgeTable, dataAgentTableMetadata, dataAgentAnnotations, dataAgentQueryPatterns, dataAgentInstitutionalKnowledge, dataAgentLearnings, dataAgentRuntimeContext } from "@shared/schema";
 import type { PolicyContext, User, PolicyResult, Recommendation } from "@shared/schema";
 import { requireCapability, getCapabilitiesForRole, checkCapabilities } from "./capability-guard";
 import { blockAllExecution, EXECUTION_MODE } from "./execution-lock";
@@ -3446,22 +3446,42 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
 
       const startTime = Date.now();
 
-      // Check knowledge base for similar patterns
-      const knowledge = await db.select().from(dataAgentKnowledgeTable)
-        .where(eq(dataAgentKnowledgeTable.tenantId, tenantId));
+      // Gather all 6 context layers
+      const [tables, annotations, patterns, institutionalKnowledge, learnings, runtime, basicKnowledge] = await Promise.all([
+        db.select().from(dataAgentTableMetadata).where(eq(dataAgentTableMetadata.tenantId, tenantId)),
+        db.select().from(dataAgentAnnotations).where(eq(dataAgentAnnotations.tenantId, tenantId)),
+        db.select().from(dataAgentQueryPatterns).where(eq(dataAgentQueryPatterns.tenantId, tenantId)),
+        db.select().from(dataAgentInstitutionalKnowledge).where(eq(dataAgentInstitutionalKnowledge.tenantId, tenantId)),
+        db.select().from(dataAgentLearnings).where(eq(dataAgentLearnings.tenantId, tenantId)),
+        db.select().from(dataAgentRuntimeContext).where(eq(dataAgentRuntimeContext.userId, userId)),
+        db.select().from(dataAgentKnowledgeTable).where(eq(dataAgentKnowledgeTable.tenantId, tenantId)),
+      ]);
 
-      // Simple pattern matching for demo - in production, use embeddings/semantic search
-      const relevantKnowledge = knowledge.filter(k =>
-        question.toLowerCase().includes(k.pattern.toLowerCase()) ||
-        k.pattern.toLowerCase().includes(question.toLowerCase().split(' ')[0])
-      );
+      const context: ContextLayers = {
+        tables,
+        annotations,
+        patterns,
+        knowledge: institutionalKnowledge,
+        learnings,
+        runtime,
+        basicKnowledge,
+      };
 
-      // Generate SQL and insight using AI (simplified for demo)
-      // In production, this would call the AI engine with schema context
-      const generatedSql = generateSimpleSql(question, relevantKnowledge);
-      const insight = generateInsight(question, generatedSql);
+      // Generate SQL using all 6 context layers
+      const { sql: generatedSql, usedLayers, confidence } = generateContextAwareSql(question, context);
+      const insight = generateContextAwareInsight(question, generatedSql, context);
 
       const executionTimeMs = Date.now() - startTime;
+
+      // Update runtime context with recent query (Layer 6)
+      await db.insert(dataAgentRuntimeContext).values({
+        tenantId,
+        userId,
+        contextType: "recent_query",
+        contextKey: "last_question",
+        contextValue: { question, tables: usedLayers.includes("table_metadata") ? tables.map(t => t.tableName) : [] },
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 min expiry
+      }).onConflictDoNothing();
 
       // Save query to history
       const [saved] = await db.insert(dataAgentQueriesTable).values({
@@ -3469,7 +3489,18 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         userId,
         question,
         generatedSql,
-        result: { message: "Query generated successfully", relevantPatterns: relevantKnowledge.length },
+        result: {
+          message: "Query generated successfully",
+          usedLayers,
+          confidence,
+          contextStats: {
+            tables: tables.length,
+            annotations: annotations.length,
+            patterns: patterns.length,
+            knowledge: institutionalKnowledge.length,
+            learnings: learnings.length,
+          }
+        },
         insight,
         status: "success",
         executionTimeMs,
@@ -3482,6 +3513,8 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
         insight,
         executionTimeMs,
         status: "success",
+        usedLayers,
+        confidence,
       });
     } catch (error) {
       res.status(500).json({ error: "Failed to process question", message: error instanceof Error ? error.message : "Unknown error" });
@@ -3583,57 +3616,433 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       const knowledge = await db.select().from(dataAgentKnowledgeTable)
         .where(eq(dataAgentKnowledgeTable.tenantId, tenantId));
 
-      const suggestions = knowledge
-        .filter(k => k.type === "pattern")
-        .slice(0, 6)
-        .map(k => ({
+      const patterns = await db.select().from(dataAgentQueryPatterns)
+        .where(eq(dataAgentQueryPatterns.tenantId, tenantId));
+
+      const suggestions = [
+        ...knowledge.filter(k => k.type === "pattern").slice(0, 3).map(k => ({
           question: k.pattern,
           description: k.descriptionAr || k.description,
-        }));
+          source: "knowledge",
+        })),
+        ...patterns.slice(0, 3).map(p => ({
+          question: (p.exampleQuestions as any[])?.[0]?.ar || p.name,
+          description: p.nameAr || p.name,
+          source: "pattern",
+        })),
+      ];
 
-      res.json(suggestions);
+      res.json(suggestions.slice(0, 6));
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch suggestions" });
     }
   });
+
+  // ==================== CONTEXT LAYERS API ====================
+
+  // Get all context layers summary
+  app.get("/api/data-agent/context", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      const userId = getAuthenticatedUserId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+
+      const [tables, annotations, patterns, knowledge, learnings, runtime] = await Promise.all([
+        db.select().from(dataAgentTableMetadata).where(eq(dataAgentTableMetadata.tenantId, tenantId)),
+        db.select().from(dataAgentAnnotations).where(eq(dataAgentAnnotations.tenantId, tenantId)),
+        db.select().from(dataAgentQueryPatterns).where(eq(dataAgentQueryPatterns.tenantId, tenantId)),
+        db.select().from(dataAgentInstitutionalKnowledge).where(eq(dataAgentInstitutionalKnowledge.tenantId, tenantId)),
+        db.select().from(dataAgentLearnings).where(eq(dataAgentLearnings.tenantId, tenantId)),
+        userId ? db.select().from(dataAgentRuntimeContext).where(eq(dataAgentRuntimeContext.userId, userId)) : [],
+      ]);
+
+      res.json({
+        layers: {
+          tableMetadata: { count: tables.length, items: tables },
+          annotations: { count: annotations.length, items: annotations },
+          queryPatterns: { count: patterns.length, items: patterns },
+          institutionalKnowledge: { count: knowledge.length, items: knowledge },
+          learnings: { count: learnings.length, items: learnings },
+          runtimeContext: { count: (runtime as any[]).length, items: runtime },
+        },
+        totalContextItems: tables.length + annotations.length + patterns.length + knowledge.length + learnings.length + (runtime as any[]).length,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch context layers" });
+    }
+  });
+
+  // Layer 1: Table Metadata
+  app.get("/api/data-agent/context/tables", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+      const tables = await db.select().from(dataAgentTableMetadata).where(eq(dataAgentTableMetadata.tenantId, tenantId));
+      res.json(tables);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch table metadata" });
+    }
+  });
+
+  app.post("/api/data-agent/context/tables", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+      const [created] = await db.insert(dataAgentTableMetadata).values({ ...req.body, tenantId }).returning();
+      res.json(created);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create table metadata" });
+    }
+  });
+
+  // Layer 2: Annotations
+  app.get("/api/data-agent/context/annotations", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+      const annotations = await db.select().from(dataAgentAnnotations).where(eq(dataAgentAnnotations.tenantId, tenantId));
+      res.json(annotations);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch annotations" });
+    }
+  });
+
+  app.post("/api/data-agent/context/annotations", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      const userId = getAuthenticatedUserId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+      const [created] = await db.insert(dataAgentAnnotations).values({ ...req.body, tenantId, createdBy: userId }).returning();
+      res.json(created);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create annotation" });
+    }
+  });
+
+  // Layer 3: Query Patterns
+  app.get("/api/data-agent/context/patterns", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+      const patterns = await db.select().from(dataAgentQueryPatterns).where(eq(dataAgentQueryPatterns.tenantId, tenantId));
+      res.json(patterns);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch query patterns" });
+    }
+  });
+
+  app.post("/api/data-agent/context/patterns", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+      const [created] = await db.insert(dataAgentQueryPatterns).values({ ...req.body, tenantId }).returning();
+      res.json(created);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create query pattern" });
+    }
+  });
+
+  // Layer 4: Institutional Knowledge
+  app.get("/api/data-agent/context/institutional", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+      const knowledge = await db.select().from(dataAgentInstitutionalKnowledge).where(eq(dataAgentInstitutionalKnowledge.tenantId, tenantId));
+      res.json(knowledge);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch institutional knowledge" });
+    }
+  });
+
+  app.post("/api/data-agent/context/institutional", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      const userId = getAuthenticatedUserId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+      const [created] = await db.insert(dataAgentInstitutionalKnowledge).values({ ...req.body, tenantId, createdBy: userId }).returning();
+      res.json(created);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create institutional knowledge" });
+    }
+  });
+
+  // Layer 5: Learnings
+  app.get("/api/data-agent/context/learnings", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+      const learnings = await db.select().from(dataAgentLearnings).where(eq(dataAgentLearnings.tenantId, tenantId));
+      res.json(learnings);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch learnings" });
+    }
+  });
+
+  // Layer 6: Runtime Context
+  app.get("/api/data-agent/context/runtime", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Authentication required" });
+      const context = await db.select().from(dataAgentRuntimeContext).where(eq(dataAgentRuntimeContext.userId, userId));
+      res.json(context);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch runtime context" });
+    }
+  });
+
+  app.post("/api/data-agent/context/runtime", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      const userId = getAuthenticatedUserId(req);
+      if (!tenantId || !userId) return res.status(401).json({ error: "Authentication required" });
+      const [created] = await db.insert(dataAgentRuntimeContext).values({ ...req.body, tenantId, userId }).returning();
+      res.json(created);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create runtime context" });
+    }
+  });
+
+  // Seed all context layers with defaults
+  app.post("/api/data-agent/context/seed", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+
+      const results: Record<string, number> = {};
+
+      // Seed Table Metadata (Layer 1)
+      const existingTables = await db.select().from(dataAgentTableMetadata).where(eq(dataAgentTableMetadata.tenantId, tenantId));
+      if (existingTables.length === 0) {
+        const defaultTables = [
+          { tableName: "orders", tableNameAr: "الطلبات", description: "Customer orders and transactions", descriptionAr: "طلبات العملاء والمعاملات", columns: [{ name: "id", type: "uuid", description: "Order ID" }, { name: "total_amount", type: "decimal", description: "Total order amount" }, { name: "created_at", type: "timestamp", description: "Order date" }, { name: "customer_id", type: "uuid", description: "Customer reference" }], relationships: [{ type: "many-to-one", relatedTable: "customers", foreignKey: "customer_id" }] },
+          { tableName: "customers", tableNameAr: "العملاء", description: "Customer information", descriptionAr: "معلومات العملاء", columns: [{ name: "id", type: "uuid", description: "Customer ID" }, { name: "name", type: "text", description: "Customer name" }, { name: "email", type: "text", description: "Email address" }, { name: "last_order_date", type: "timestamp", description: "Last order date" }] },
+          { tableName: "products", tableNameAr: "المنتجات", description: "Product catalog", descriptionAr: "كتالوج المنتجات", columns: [{ name: "id", type: "uuid", description: "Product ID" }, { name: "name", type: "text", description: "Product name" }, { name: "price", type: "decimal", description: "Unit price" }, { name: "stock_quantity", type: "integer", description: "Available stock" }] },
+          { tableName: "order_items", tableNameAr: "عناصر الطلب", description: "Order line items", descriptionAr: "عناصر الطلب", columns: [{ name: "order_id", type: "uuid", description: "Order reference" }, { name: "product_id", type: "uuid", description: "Product reference" }, { name: "quantity", type: "integer", description: "Quantity ordered" }, { name: "unit_price", type: "decimal", description: "Price per unit" }] },
+        ];
+        for (const t of defaultTables) {
+          await db.insert(dataAgentTableMetadata).values({ ...t, tenantId });
+        }
+        results.tables = defaultTables.length;
+      }
+
+      // Seed Annotations (Layer 2)
+      const existingAnnotations = await db.select().from(dataAgentAnnotations).where(eq(dataAgentAnnotations.tenantId, tenantId));
+      if (existingAnnotations.length === 0) {
+        const defaultAnnotations = [
+          { targetType: "metric", targetName: "monthly_revenue", annotationType: "metric_definition", title: "Monthly Revenue", titleAr: "الإيراد الشهري", content: "SUM(total_amount) for orders in the current month", contentAr: "مجموع المبالغ للطلبات في الشهر الحالي", sqlFragment: "SUM(total_amount) WHERE created_at >= DATE_TRUNC('month', NOW())" },
+          { targetType: "column", targetName: "orders.total_amount", annotationType: "business_rule", title: "Total includes tax", titleAr: "الإجمالي يشمل الضريبة", content: "The total_amount column includes 15% VAT", contentAr: "عمود الإجمالي يشمل ضريبة القيمة المضافة 15%", sqlFragment: "total_amount / 1.15 AS amount_before_tax" },
+          { targetType: "table", targetName: "customers", annotationType: "warning", title: "PII Data", titleAr: "بيانات شخصية", content: "Contains personally identifiable information", contentAr: "يحتوي على معلومات تعريف شخصية", priority: 100 },
+        ];
+        for (const a of defaultAnnotations) {
+          await db.insert(dataAgentAnnotations).values({ ...a, tenantId });
+        }
+        results.annotations = defaultAnnotations.length;
+      }
+
+      // Seed Query Patterns (Layer 3)
+      const existingPatterns = await db.select().from(dataAgentQueryPatterns).where(eq(dataAgentQueryPatterns.tenantId, tenantId));
+      if (existingPatterns.length === 0) {
+        const defaultPatterns = [
+          { name: "Count Records", nameAr: "عدد السجلات", category: "aggregation", intentPatterns: ["how many", "count", "عدد", "كم"], sqlTemplate: "SELECT COUNT(*) as total FROM {{table}}", parameters: [{ name: "table", type: "table_name", description: "Table to count" }], exampleQuestions: [{ ar: "كم عدد الطلبات؟", en: "How many orders?" }] },
+          { name: "Sum Values", nameAr: "مجموع القيم", category: "aggregation", intentPatterns: ["total", "sum", "إجمالي", "مجموع"], sqlTemplate: "SELECT SUM({{column}}) as total FROM {{table}}", parameters: [{ name: "table", type: "table_name" }, { name: "column", type: "column_name" }], exampleQuestions: [{ ar: "إجمالي المبيعات", en: "Total sales" }] },
+          { name: "Top N Records", nameAr: "أعلى N سجل", category: "filtering", intentPatterns: ["top", "best", "highest", "أفضل", "أعلى"], sqlTemplate: "SELECT * FROM {{table}} ORDER BY {{column}} DESC LIMIT {{limit}}", parameters: [{ name: "table", type: "table_name" }, { name: "column", type: "column_name" }, { name: "limit", type: "number", defaultValue: "10" }], exampleQuestions: [{ ar: "أفضل 10 منتجات", en: "Top 10 products" }] },
+          { name: "Time Range Filter", nameAr: "تصفية حسب الفترة", category: "time_series", intentPatterns: ["this month", "last week", "today", "هذا الشهر", "الأسبوع الماضي", "اليوم"], sqlTemplate: "SELECT * FROM {{table}} WHERE {{date_column}} >= {{start_date}} AND {{date_column}} < {{end_date}}", parameters: [{ name: "table", type: "table_name" }, { name: "date_column", type: "column_name" }, { name: "start_date", type: "date" }, { name: "end_date", type: "date" }], exampleQuestions: [{ ar: "طلبات هذا الشهر", en: "Orders this month" }] },
+          { name: "Group By Analysis", nameAr: "تحليل حسب المجموعات", category: "aggregation", intentPatterns: ["by", "per", "group", "حسب", "لكل"], sqlTemplate: "SELECT {{group_column}}, COUNT(*) as count, SUM({{value_column}}) as total FROM {{table}} GROUP BY {{group_column}}", parameters: [{ name: "table", type: "table_name" }, { name: "group_column", type: "column_name" }, { name: "value_column", type: "column_name" }], exampleQuestions: [{ ar: "المبيعات حسب المنتج", en: "Sales by product" }] },
+        ];
+        for (const p of defaultPatterns) {
+          await db.insert(dataAgentQueryPatterns).values({ ...p, tenantId, isVerified: true });
+        }
+        results.patterns = defaultPatterns.length;
+      }
+
+      // Seed Institutional Knowledge (Layer 4)
+      const existingKnowledge = await db.select().from(dataAgentInstitutionalKnowledge).where(eq(dataAgentInstitutionalKnowledge.tenantId, tenantId));
+      if (existingKnowledge.length === 0) {
+        const defaultKnowledge = [
+          { category: "terminology", title: "Active Customer", titleAr: "عميل نشط", content: "A customer who has placed an order in the last 30 days", contentAr: "العميل الذي قدم طلباً خلال آخر 30 يوماً", keywords: ["active", "customer"], keywordsAr: ["نشط", "عميل"], relatedTables: ["customers", "orders"] },
+          { category: "policy", title: "Data Retention", titleAr: "الاحتفاظ بالبيانات", content: "Order data is retained for 7 years for compliance", contentAr: "يتم الاحتفاظ ببيانات الطلبات لمدة 7 سنوات للامتثال", keywords: ["retention", "compliance", "archive"], keywordsAr: ["احتفاظ", "امتثال", "أرشيف"], relatedTables: ["orders"] },
+          { category: "best_practice", title: "Query Performance", titleAr: "أداء الاستعلامات", content: "Always filter by date range when querying orders table to improve performance", contentAr: "استخدم دائماً تصفية التاريخ عند الاستعلام من جدول الطلبات لتحسين الأداء", keywords: ["performance", "optimization"], keywordsAr: ["أداء", "تحسين"], relatedTables: ["orders"] },
+          { category: "faq", title: "Revenue Calculation", titleAr: "حساب الإيرادات", content: "Revenue = SUM(order total) - Returns - Discounts. Excludes cancelled orders.", contentAr: "الإيرادات = مجموع الطلبات - المرتجعات - الخصومات. لا يشمل الطلبات الملغاة.", keywords: ["revenue", "sales", "calculation"], keywordsAr: ["إيرادات", "مبيعات", "حساب"], relatedTables: ["orders"] },
+        ];
+        for (const k of defaultKnowledge) {
+          await db.insert(dataAgentInstitutionalKnowledge).values({ ...k, tenantId });
+        }
+        results.institutional = defaultKnowledge.length;
+      }
+
+      // Seed Learnings (Layer 5)
+      const existingLearnings = await db.select().from(dataAgentLearnings).where(eq(dataAgentLearnings.tenantId, tenantId));
+      if (existingLearnings.length === 0) {
+        const defaultLearnings = [
+          { learningType: "error_fix", triggerPattern: "column does not exist", explanation: "Check column names match the schema. Use table metadata for correct column names.", explanationAr: "تحقق من مطابقة أسماء الأعمدة للمخطط. استخدم بيانات الجدول للحصول على أسماء الأعمدة الصحيحة.", autoApply: false, confidenceScore: 90 },
+          { learningType: "optimization", triggerPattern: "query timeout", originalSql: "SELECT * FROM orders", correctedSql: "SELECT * FROM orders WHERE created_at > NOW() - INTERVAL '30 days'", explanation: "Add date filter for large tables to improve performance", explanationAr: "أضف فلتر التاريخ للجداول الكبيرة لتحسين الأداء", autoApply: true, confidenceScore: 85 },
+          { learningType: "clarification", triggerPattern: "sales", explanation: "When user asks about 'sales', they usually mean total_amount from orders table", explanationAr: "عندما يسأل المستخدم عن 'المبيعات'، يقصد عادة total_amount من جدول الطلبات", autoApply: true, confidenceScore: 80 },
+        ];
+        for (const l of defaultLearnings) {
+          await db.insert(dataAgentLearnings).values({ ...l, tenantId });
+        }
+        results.learnings = defaultLearnings.length;
+      }
+
+      res.json({ message: "Context layers seeded successfully", results });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to seed context layers", message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
 }
 
-// Helper functions for data agent (simplified for demo)
-function generateSimpleSql(question: string, knowledge: any[]): string {
-  const q = question.toLowerCase();
+// ==================== DATA AGENT CONTEXT-AWARE SQL GENERATION ====================
 
-  // Check knowledge base first
-  for (const k of knowledge) {
-    if (q.includes(k.pattern.toLowerCase())) {
-      return k.solution;
+interface ContextLayers {
+  tables: any[];
+  annotations: any[];
+  patterns: any[];
+  knowledge: any[];
+  learnings: any[];
+  runtime: any[];
+  basicKnowledge: any[];
+}
+
+function generateContextAwareSql(question: string, context: ContextLayers): { sql: string; usedLayers: string[]; confidence: number } {
+  const q = question.toLowerCase();
+  const usedLayers: string[] = [];
+  let confidence = 50;
+
+  // Layer 3: Check Query Patterns first (most reliable)
+  for (const pattern of context.patterns) {
+    const intents = (pattern.intentPatterns as string[]) || [];
+    if (intents.some((intent: string) => q.includes(intent.toLowerCase()))) {
+      usedLayers.push("query_patterns");
+      confidence = pattern.isVerified ? 95 : 80;
+
+      // Try to fill in template parameters
+      let sql = pattern.sqlTemplate as string;
+      const params = (pattern.parameters as any[]) || [];
+
+      // Detect table from question using Layer 1
+      const matchedTable = context.tables.find(t =>
+        q.includes(t.tableName.toLowerCase()) ||
+        (t.tableNameAr && q.includes(t.tableNameAr.toLowerCase()))
+      );
+      if (matchedTable) {
+        sql = sql.replace(/\{\{table\}\}/g, matchedTable.tableName);
+        usedLayers.push("table_metadata");
+      }
+
+      // Default replacements
+      sql = sql.replace(/\{\{table\}\}/g, "orders");
+      sql = sql.replace(/\{\{column\}\}/g, "total_amount");
+      sql = sql.replace(/\{\{limit\}\}/g, "10");
+
+      return { sql, usedLayers, confidence };
     }
   }
 
-  // Simple pattern matching fallback
+  // Layer 5: Check Learnings for auto-apply fixes
+  for (const learning of context.learnings) {
+    if (learning.autoApply && learning.correctedSql && q.includes(learning.triggerPattern.toLowerCase())) {
+      usedLayers.push("learnings");
+      confidence = learning.confidenceScore || 70;
+      return { sql: learning.correctedSql, usedLayers, confidence };
+    }
+  }
+
+  // Basic Knowledge patterns
+  for (const k of context.basicKnowledge) {
+    if (q.includes(k.pattern.toLowerCase())) {
+      usedLayers.push("basic_knowledge");
+      confidence = 85;
+      return { sql: k.solution, usedLayers, confidence };
+    }
+  }
+
+  // Layer 2: Check Annotations for metric definitions
+  for (const ann of context.annotations) {
+    if (ann.annotationType === "metric_definition" && ann.sqlFragment) {
+      const title = (ann.title || "").toLowerCase();
+      const titleAr = (ann.titleAr || "").toLowerCase();
+      if (q.includes(title) || q.includes(titleAr)) {
+        usedLayers.push("annotations");
+        confidence = 90;
+        return { sql: `SELECT ${ann.sqlFragment} FROM orders`, usedLayers, confidence };
+      }
+    }
+  }
+
+  // Layer 1: Use Table Metadata for basic queries
+  const tableMatch = context.tables.find(t =>
+    q.includes(t.tableName.toLowerCase()) ||
+    (t.tableNameAr && q.includes(t.tableNameAr.toLowerCase()))
+  );
+
+  if (tableMatch) {
+    usedLayers.push("table_metadata");
+
+    if (q.includes("عدد") || q.includes("count") || q.includes("how many")) {
+      confidence = 75;
+      return { sql: `SELECT COUNT(*) as total FROM ${tableMatch.tableName}`, usedLayers, confidence };
+    }
+    if (q.includes("إجمالي") || q.includes("total") || q.includes("sum")) {
+      const numericCol = (tableMatch.columns as any[])?.find((c: any) => c.type === "decimal" || c.type === "integer");
+      confidence = 70;
+      return { sql: `SELECT SUM(${numericCol?.name || 'amount'}) as total FROM ${tableMatch.tableName}`, usedLayers, confidence };
+    }
+    if (q.includes("أفضل") || q.includes("top") || q.includes("best")) {
+      confidence = 70;
+      return { sql: `SELECT * FROM ${tableMatch.tableName} ORDER BY created_at DESC LIMIT 10`, usedLayers, confidence };
+    }
+  }
+
+  // Fallback patterns
   if (q.includes("عدد") || q.includes("count") || q.includes("how many")) {
-    if (q.includes("طلب") || q.includes("order")) return "SELECT COUNT(*) as total FROM orders";
-    if (q.includes("عميل") || q.includes("customer")) return "SELECT COUNT(*) as total FROM customers";
-    if (q.includes("منتج") || q.includes("product")) return "SELECT COUNT(*) as total FROM products";
+    if (q.includes("طلب") || q.includes("order")) return { sql: "SELECT COUNT(*) as total FROM orders", usedLayers: ["fallback"], confidence: 60 };
+    if (q.includes("عميل") || q.includes("customer")) return { sql: "SELECT COUNT(*) as total FROM customers", usedLayers: ["fallback"], confidence: 60 };
+    if (q.includes("منتج") || q.includes("product")) return { sql: "SELECT COUNT(*) as total FROM products", usedLayers: ["fallback"], confidence: 60 };
   }
   if (q.includes("إجمالي") || q.includes("total") || q.includes("sum")) {
-    if (q.includes("مبيعات") || q.includes("sales")) return "SELECT SUM(total_amount) as total FROM orders";
-  }
-  if (q.includes("أفضل") || q.includes("top") || q.includes("best")) {
-    return "SELECT name, count FROM items ORDER BY count DESC LIMIT 10";
+    if (q.includes("مبيعات") || q.includes("sales")) return { sql: "SELECT SUM(total_amount) as total FROM orders", usedLayers: ["fallback"], confidence: 60 };
   }
 
-  return "-- Unable to generate SQL. Please provide more context or rephrase your question.";
+  return {
+    sql: "-- Unable to generate SQL. Please provide more context or try one of the suggested questions.",
+    usedLayers: [],
+    confidence: 0
+  };
 }
 
-function generateInsight(question: string, sql: string): string {
-  if (sql.includes("COUNT")) {
-    return "This query counts the total number of records matching your criteria.";
+function generateContextAwareInsight(question: string, sql: string, context: ContextLayers): string {
+  const insights: string[] = [];
+
+  // Check Layer 4: Institutional Knowledge for relevant info
+  for (const k of context.knowledge) {
+    const keywords = [...((k.keywords as string[]) || []), ...((k.keywordsAr as string[]) || [])];
+    if (keywords.some(kw => question.toLowerCase().includes(kw.toLowerCase()))) {
+      insights.push(k.contentAr || k.content);
+    }
   }
-  if (sql.includes("SUM")) {
-    return "This query calculates the total sum of the requested values.";
+
+  // Check Layer 2: Annotations for warnings
+  for (const ann of context.annotations) {
+    if (ann.annotationType === "warning" && sql.toLowerCase().includes(ann.targetName.toLowerCase())) {
+      insights.push(`⚠️ ${ann.titleAr || ann.title}: ${ann.contentAr || ann.content}`);
+    }
+    if (ann.annotationType === "business_rule" && sql.toLowerCase().includes(ann.targetName.split(".")[0])) {
+      insights.push(`📋 ${ann.contentAr || ann.content}`);
+    }
   }
-  if (sql.includes("ORDER BY") && sql.includes("DESC")) {
-    return "This query returns the top items sorted by the highest values first.";
+
+  // Default insights based on SQL
+  if (insights.length === 0) {
+    if (sql.includes("COUNT")) {
+      insights.push("This query counts the total number of records matching your criteria.");
+    } else if (sql.includes("SUM")) {
+      insights.push("This query calculates the total sum of the requested values.");
+    } else if (sql.includes("ORDER BY") && sql.includes("DESC")) {
+      insights.push("This query returns the top items sorted by the highest values first.");
+    } else {
+      insights.push("Query generated based on your question. Review the SQL to ensure it matches your intent.");
+    }
   }
-  return "Query generated based on your question. Review the SQL to ensure it matches your intent.";
+
+  return insights.join("\n\n");
 }
