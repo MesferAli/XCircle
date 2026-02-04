@@ -7,7 +7,7 @@ import { aiEngine } from "./ai-engine";
 import { connectorEngine } from "./connector-engine";
 import { mappingEngine } from "./mapping-engine";
 import { policyEngine } from "./policy-engine";
-import { mappingConfigPayloadSchema, policyContextSchema, tenants, useCaseFeatures, meetingRequests, insertMeetingRequestSchema, productivitySkills as productivitySkillsTable, userSkillProgress as userSkillProgressTable } from "@shared/schema";
+import { mappingConfigPayloadSchema, policyContextSchema, tenants, useCaseFeatures, meetingRequests, insertMeetingRequestSchema, productivitySkills as productivitySkillsTable, userSkillProgress as userSkillProgressTable, dataAgentQueries as dataAgentQueriesTable, dataAgentKnowledge as dataAgentKnowledgeTable } from "@shared/schema";
 import type { PolicyContext, User, PolicyResult, Recommendation } from "@shared/schema";
 import { requireCapability, getCapabilitiesForRole, checkCapabilities } from "./capability-guard";
 import { blockAllExecution, EXECUTION_MODE } from "./execution-lock";
@@ -3413,4 +3413,227 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       res.status(500).json({ error: "Failed to update skill progress", message: error instanceof Error ? error.message : "Unknown error" });
     }
   });
+
+  // ==================== DATA AGENT (Dash-inspired) ====================
+
+  // Get query history
+  app.get("/api/data-agent/history", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      const userId = getAuthenticatedUserId(req);
+      if (!tenantId || !userId) return res.status(401).json({ error: "Authentication required" });
+
+      const queries = await db.select().from(dataAgentQueriesTable)
+        .where(eq(dataAgentQueriesTable.userId, userId))
+        .orderBy(dataAgentQueriesTable.createdAt);
+      res.json(queries.reverse().slice(0, 50)); // Last 50 queries
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch query history", message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Ask a question (main data agent endpoint)
+  app.post("/api/data-agent/ask", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      const userId = getAuthenticatedUserId(req);
+      if (!tenantId || !userId) return res.status(401).json({ error: "Authentication required" });
+
+      const { question } = req.body;
+      if (!question || typeof question !== "string") {
+        return res.status(400).json({ error: "Question is required" });
+      }
+
+      const startTime = Date.now();
+
+      // Check knowledge base for similar patterns
+      const knowledge = await db.select().from(dataAgentKnowledgeTable)
+        .where(eq(dataAgentKnowledgeTable.tenantId, tenantId));
+
+      // Simple pattern matching for demo - in production, use embeddings/semantic search
+      const relevantKnowledge = knowledge.filter(k =>
+        question.toLowerCase().includes(k.pattern.toLowerCase()) ||
+        k.pattern.toLowerCase().includes(question.toLowerCase().split(' ')[0])
+      );
+
+      // Generate SQL and insight using AI (simplified for demo)
+      // In production, this would call the AI engine with schema context
+      const generatedSql = generateSimpleSql(question, relevantKnowledge);
+      const insight = generateInsight(question, generatedSql);
+
+      const executionTimeMs = Date.now() - startTime;
+
+      // Save query to history
+      const [saved] = await db.insert(dataAgentQueriesTable).values({
+        tenantId,
+        userId,
+        question,
+        generatedSql,
+        result: { message: "Query generated successfully", relevantPatterns: relevantKnowledge.length },
+        insight,
+        status: "success",
+        executionTimeMs,
+      }).returning();
+
+      res.json({
+        id: saved.id,
+        question,
+        generatedSql,
+        insight,
+        executionTimeMs,
+        status: "success",
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to process question", message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Submit feedback for a query
+  app.post("/api/data-agent/:queryId/feedback", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = getAuthenticatedUserId(req);
+      if (!userId) return res.status(401).json({ error: "Authentication required" });
+
+      const { queryId } = req.params;
+      const { rating, note } = req.body;
+
+      const [updated] = await db.update(dataAgentQueriesTable)
+        .set({
+          feedbackRating: rating,
+          feedbackNote: note,
+        })
+        .where(eq(dataAgentQueriesTable.id, queryId))
+        .returning();
+
+      // If positive feedback, consider saving to knowledge base
+      if (rating >= 4 && updated) {
+        const tenantId = getSecureTenantId(req);
+        if (tenantId) {
+          await db.insert(dataAgentKnowledgeTable).values({
+            tenantId,
+            type: "pattern",
+            pattern: updated.question.toLowerCase().slice(0, 100),
+            solution: updated.generatedSql || "",
+            description: `Learned from user query with ${rating}/5 rating`,
+          }).onConflictDoNothing();
+        }
+      }
+
+      res.json({ success: true, message: "Feedback recorded" });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to save feedback", message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Get knowledge base
+  app.get("/api/data-agent/knowledge", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+
+      const knowledge = await db.select().from(dataAgentKnowledgeTable)
+        .where(eq(dataAgentKnowledgeTable.tenantId, tenantId));
+      res.json(knowledge);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch knowledge", message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Seed default knowledge patterns
+  app.post("/api/data-agent/knowledge/seed", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+
+      const existing = await db.select().from(dataAgentKnowledgeTable)
+        .where(eq(dataAgentKnowledgeTable.tenantId, tenantId));
+      if (existing.length > 0) {
+        return res.json({ message: "Knowledge already seeded", count: existing.length });
+      }
+
+      const defaultKnowledge = [
+        { type: "pattern", pattern: "عدد الطلبات", solution: "SELECT COUNT(*) as total_orders FROM orders", description: "Count orders", descriptionAr: "عدد الطلبات" },
+        { type: "pattern", pattern: "إجمالي المبيعات", solution: "SELECT SUM(total_amount) as total_sales FROM orders", description: "Total sales amount", descriptionAr: "إجمالي المبيعات" },
+        { type: "pattern", pattern: "how many orders", solution: "SELECT COUNT(*) as total_orders FROM orders", description: "Count orders", descriptionAr: "عدد الطلبات" },
+        { type: "pattern", pattern: "total sales", solution: "SELECT SUM(total_amount) as total_sales FROM orders", description: "Total sales amount", descriptionAr: "إجمالي المبيعات" },
+        { type: "pattern", pattern: "top products", solution: "SELECT product_name, SUM(quantity) as sold FROM order_items GROUP BY product_name ORDER BY sold DESC LIMIT 10", description: "Top selling products", descriptionAr: "أفضل المنتجات مبيعاً" },
+        { type: "pattern", pattern: "أفضل المنتجات", solution: "SELECT product_name, SUM(quantity) as sold FROM order_items GROUP BY product_name ORDER BY sold DESC LIMIT 10", description: "Top selling products", descriptionAr: "أفضل المنتجات مبيعاً" },
+        { type: "business_rule", pattern: "active customers", solution: "SELECT * FROM customers WHERE last_order_date > NOW() - INTERVAL '30 days'", description: "Customers active in last 30 days", descriptionAr: "العملاء النشطون خلال 30 يوم" },
+        { type: "business_rule", pattern: "العملاء النشطون", solution: "SELECT * FROM customers WHERE last_order_date > NOW() - INTERVAL '30 days'", description: "Customers active in last 30 days", descriptionAr: "العملاء النشطون خلال 30 يوم" },
+      ];
+
+      const seeded = [];
+      for (const k of defaultKnowledge) {
+        const [inserted] = await db.insert(dataAgentKnowledgeTable).values({ ...k, tenantId }).returning();
+        seeded.push(inserted);
+      }
+
+      res.json({ message: "Knowledge seeded successfully", count: seeded.length });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to seed knowledge", message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Suggested questions based on knowledge
+  app.get("/api/data-agent/suggestions", isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const tenantId = getSecureTenantId(req);
+      if (!tenantId) return res.status(401).json({ error: "Tenant not found" });
+
+      const knowledge = await db.select().from(dataAgentKnowledgeTable)
+        .where(eq(dataAgentKnowledgeTable.tenantId, tenantId));
+
+      const suggestions = knowledge
+        .filter(k => k.type === "pattern")
+        .slice(0, 6)
+        .map(k => ({
+          question: k.pattern,
+          description: k.descriptionAr || k.description,
+        }));
+
+      res.json(suggestions);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch suggestions" });
+    }
+  });
+}
+
+// Helper functions for data agent (simplified for demo)
+function generateSimpleSql(question: string, knowledge: any[]): string {
+  const q = question.toLowerCase();
+
+  // Check knowledge base first
+  for (const k of knowledge) {
+    if (q.includes(k.pattern.toLowerCase())) {
+      return k.solution;
+    }
+  }
+
+  // Simple pattern matching fallback
+  if (q.includes("عدد") || q.includes("count") || q.includes("how many")) {
+    if (q.includes("طلب") || q.includes("order")) return "SELECT COUNT(*) as total FROM orders";
+    if (q.includes("عميل") || q.includes("customer")) return "SELECT COUNT(*) as total FROM customers";
+    if (q.includes("منتج") || q.includes("product")) return "SELECT COUNT(*) as total FROM products";
+  }
+  if (q.includes("إجمالي") || q.includes("total") || q.includes("sum")) {
+    if (q.includes("مبيعات") || q.includes("sales")) return "SELECT SUM(total_amount) as total FROM orders";
+  }
+  if (q.includes("أفضل") || q.includes("top") || q.includes("best")) {
+    return "SELECT name, count FROM items ORDER BY count DESC LIMIT 10";
+  }
+
+  return "-- Unable to generate SQL. Please provide more context or rephrase your question.";
+}
+
+function generateInsight(question: string, sql: string): string {
+  if (sql.includes("COUNT")) {
+    return "This query counts the total number of records matching your criteria.";
+  }
+  if (sql.includes("SUM")) {
+    return "This query calculates the total sum of the requested values.";
+  }
+  if (sql.includes("ORDER BY") && sql.includes("DESC")) {
+    return "This query returns the top items sorted by the highest values first.";
+  }
+  return "Query generated based on your question. Review the SQL to ensure it matches your intent.";
 }

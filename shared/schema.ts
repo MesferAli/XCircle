@@ -905,6 +905,67 @@ export const insertUserSkillProgressSchema = createInsertSchema(userSkillProgres
 export type InsertUserSkillProgress = z.infer<typeof insertUserSkillProgressSchema>;
 export type UserSkillProgress = typeof userSkillProgress.$inferSelect;
 
+// ==================== DATA AGENT (Dash-inspired) ====================
+// Stores natural language queries and their SQL results
+export const dataAgentQueries = pgTable("data_agent_queries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  question: text("question").notNull(), // Natural language question
+  generatedSql: text("generated_sql"), // The SQL query generated
+  result: jsonb("result"), // Query result data
+  insight: text("insight"), // AI-generated insight from the data
+  status: text("status").notNull().default("pending"), // pending, success, error
+  errorMessage: text("error_message"),
+  executionTimeMs: integer("execution_time_ms"),
+  feedbackRating: integer("feedback_rating"), // 1-5 user rating
+  feedbackNote: text("feedback_note"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDataAgentQuerySchema = createInsertSchema(dataAgentQueries).pick({
+  tenantId: true,
+  userId: true,
+  question: true,
+  generatedSql: true,
+  result: true,
+  insight: true,
+  status: true,
+  errorMessage: true,
+  executionTimeMs: true,
+});
+
+export type InsertDataAgentQuery = z.infer<typeof insertDataAgentQuerySchema>;
+export type DataAgentQuery = typeof dataAgentQueries.$inferSelect;
+
+// Stores learned patterns for improving future queries (self-learning)
+export const dataAgentKnowledge = pgTable("data_agent_knowledge", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  tenantId: varchar("tenant_id").notNull(),
+  type: text("type").notNull(), // pattern, fix, annotation, business_rule
+  pattern: text("pattern").notNull(), // The question pattern or error pattern
+  solution: text("solution").notNull(), // The working SQL or fix
+  description: text("description"),
+  descriptionAr: text("description_ar"),
+  usageCount: integer("usage_count").default(0),
+  successRate: integer("success_rate").default(100), // percentage
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDataAgentKnowledgeSchema = createInsertSchema(dataAgentKnowledge).pick({
+  tenantId: true,
+  type: true,
+  pattern: true,
+  solution: true,
+  description: true,
+  descriptionAr: true,
+});
+
+export type InsertDataAgentKnowledge = z.infer<typeof insertDataAgentKnowledgeSchema>;
+export type DataAgentKnowledge = typeof dataAgentKnowledge.$inferSelect;
+
 // ==================== USE CASE FEATURES MAPPING ====================
 // Defines which features are available for each use case
 export const useCaseFeatures: Record<UseCaseType, string[]> = {
@@ -928,6 +989,7 @@ export const allPlatformFeatures = [
   "policies",
   "audit",
   "productivity_skills",
+  "data_agent",
 ] as const;
 
 export type PlatformFeature = typeof allPlatformFeatures[number];

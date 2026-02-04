@@ -12,6 +12,7 @@ import {
   Rocket,
   HelpCircle,
   CircleDot,
+  MessageSquareText,
 } from "lucide-react";
 import {
   Sidebar,
@@ -48,6 +49,7 @@ export function AppSidebar() {
     { title: t.nav.recommendations, url: "/recommendations", icon: Lightbulb, badge: "3", testId: "nav-recommendations" },
     { title: t.nav.anomalies, url: "/anomalies", icon: AlertTriangle, badge: "1", testId: "nav-anomalies" },
     { title: t.nav.productivitySkills, url: "/productivity-skills", icon: Rocket, testId: "nav-productivity-skills" },
+    { title: t.nav.dataAgent, url: "/data-agent", icon: MessageSquareText, testId: "nav-data-agent" },
   ];
 
   const governanceNavItems = [
