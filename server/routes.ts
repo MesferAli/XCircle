@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { storage } from "./storage";
 import { db } from "./db";
 import { aiEngine } from "./ai-engine";
+import { zaiService } from "./zai-service";
 import { connectorEngine } from "./connector-engine";
 import { mappingEngine } from "./mapping-engine";
 import { policyEngine } from "./policy-engine";
@@ -1725,6 +1726,269 @@ export async function registerRoutes(server: Server, app: Express): Promise<void
       });
     }
   });
+
+  // ==================== Z.AI ENHANCED ENDPOINTS ====================
+
+  /**
+   * Get Z.ai service status
+   * Returns configuration status and available features
+   */
+  app.get("/api/ai/zai/status", async (req, res) => {
+    try {
+      const status = zaiService.getStatus();
+      res.json({
+        success: true,
+        ...status,
+        availableFeatures: status.configured ? [
+          "demandInsights",
+          "anomalyAnalysis",
+          "naturalLanguageQuestions",
+          "reportGeneration",
+          "enhancedRecommendations",
+        ] : [],
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: "Failed to get Z.ai status",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
+  /**
+   * Configure Z.ai service with API key
+   */
+  app.post("/api/ai/zai/configure", async (req, res) => {
+    try {
+      const { apiKey, baseUrl } = req.body;
+
+      if (!apiKey) {
+        return res.status(400).json({
+          success: false,
+          error: "apiKey is required",
+        });
+      }
+
+      zaiService.configure(apiKey, baseUrl);
+
+      res.json({
+        success: true,
+        message: "Z.ai service configured successfully",
+        status: zaiService.getStatus(),
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: "Failed to configure Z.ai service",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
+  /**
+   * Get AI-powered demand insights using Z.ai GLM models
+   */
+  app.get("/api/ai/zai/insights", async (req, res) => {
+    try {
+      const tenantId = req.query.tenantId as string || "default";
+
+      if (!zaiService.isConfigured()) {
+        return res.status(400).json({
+          success: false,
+          error: "Z.ai service not configured",
+          message: "Please configure Z.ai API key first using POST /api/ai/zai/configure",
+        });
+      }
+
+      const insights = await aiEngine.getAIInsights(tenantId);
+
+      if (!insights) {
+        return res.status(500).json({
+          success: false,
+          error: "Failed to generate insights",
+        });
+      }
+
+      res.json({
+        success: true,
+        tenantId,
+        insights,
+      });
+    } catch (error) {
+      console.error("Z.ai insights error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to get AI insights",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
+  /**
+   * Analyze an anomaly using Z.ai for root cause analysis
+   */
+  app.get("/api/ai/zai/anomaly-analysis/:anomalyId", async (req, res) => {
+    try {
+      const tenantId = req.query.tenantId as string || "default";
+      const { anomalyId } = req.params;
+
+      if (!zaiService.isConfigured()) {
+        return res.status(400).json({
+          success: false,
+          error: "Z.ai service not configured",
+        });
+      }
+
+      const analysis = await aiEngine.getAnomalyAnalysis(anomalyId, tenantId);
+
+      if (!analysis) {
+        return res.status(404).json({
+          success: false,
+          error: "Anomaly not found or analysis failed",
+        });
+      }
+
+      res.json({
+        success: true,
+        anomalyId,
+        analysis,
+      });
+    } catch (error) {
+      console.error("Z.ai anomaly analysis error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to analyze anomaly",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
+  /**
+   * Ask a natural language question about inventory
+   */
+  app.post("/api/ai/zai/ask", async (req, res) => {
+    try {
+      const tenantId = req.query.tenantId as string || "default";
+      const { question } = req.body;
+
+      if (!question) {
+        return res.status(400).json({
+          success: false,
+          error: "question is required in request body",
+        });
+      }
+
+      if (!zaiService.isConfigured()) {
+        return res.status(400).json({
+          success: false,
+          error: "Z.ai service not configured",
+        });
+      }
+
+      const answer = await aiEngine.askQuestion(question, tenantId);
+
+      if (!answer) {
+        return res.status(500).json({
+          success: false,
+          error: "Failed to process question",
+        });
+      }
+
+      res.json({
+        success: true,
+        question,
+        ...answer,
+      });
+    } catch (error) {
+      console.error("Z.ai question error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to answer question",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
+  /**
+   * Generate an inventory report using Z.ai
+   */
+  app.post("/api/ai/zai/report", async (req, res) => {
+    try {
+      const tenantId = req.query.tenantId as string || "default";
+      const {
+        type = "daily",
+        sections = ["overview", "inventory_status", "recommendations", "anomalies"],
+      } = req.body;
+
+      if (!zaiService.isConfigured()) {
+        return res.status(400).json({
+          success: false,
+          error: "Z.ai service not configured",
+        });
+      }
+
+      const report = await aiEngine.generateReport(tenantId, type, sections);
+
+      if (!report) {
+        return res.status(500).json({
+          success: false,
+          error: "Failed to generate report",
+        });
+      }
+
+      res.json({
+        success: true,
+        tenantId,
+        report,
+      });
+    } catch (error) {
+      console.error("Z.ai report generation error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to generate report",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
+  /**
+   * Run enhanced analysis with Z.ai insights
+   */
+  app.post("/api/ai/zai/enhanced-analyze", async (req, res) => {
+    try {
+      const tenantId = req.query.tenantId as string || "default";
+
+      const result = await aiEngine.generateEnhancedRecommendations(tenantId);
+
+      res.json({
+        success: true,
+        tenantId,
+        timestamp: result.timestamp,
+        summary: {
+          demandForecastsGenerated: result.demandForecasts.length,
+          stockoutRisksAnalyzed: result.stockoutRisks.length,
+          anomaliesDetected: result.anomalies.length,
+          recommendationsCreated: result.recommendationsCreated,
+          anomaliesCreated: result.anomaliesCreated,
+          hasAiInsights: !!result.aiInsights,
+        },
+        demandForecasts: result.demandForecasts,
+        stockoutRisks: result.stockoutRisks,
+        anomalies: result.anomalies,
+        aiInsights: result.aiInsights,
+      });
+    } catch (error) {
+      console.error("Z.ai enhanced analysis error:", error);
+      res.status(500).json({
+        success: false,
+        error: "Failed to run enhanced analysis",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
+  // ==================== END Z.AI ENDPOINTS ====================
 
   const validateTenant = async (tenantId: string | undefined): Promise<{ valid: boolean; error?: string }> => {
     if (!tenantId) {

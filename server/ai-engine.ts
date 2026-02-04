@@ -1,4 +1,5 @@
 import { storage } from "./storage";
+import { zaiService, type DemandInsight, type AnomalyAnalysis } from "./zai-service";
 import type {
   Item,
   StockBalance,
@@ -723,6 +724,172 @@ class AIEngine {
     }
 
     return `Unusual activity detected: ${detectedValue} units observed vs. ${expectedValue.toFixed(1)} expected (${percentDeviation}% deviation).`;
+  }
+
+  /**
+   * Get AI-powered insights using Z.ai GLM models
+   * This provides enhanced analysis beyond statistical methods
+   */
+  async getAIInsights(tenantId: string): Promise<DemandInsight | null> {
+    if (!zaiService.isConfigured()) {
+      console.log("Z.ai service not configured, skipping AI insights");
+      return null;
+    }
+
+    try {
+      const items = await storage.getItems(tenantId);
+      const movements = await storage.getStockMovements(tenantId);
+      const demandSignals = await storage.getDemandSignals(tenantId);
+
+      const insights = await zaiService.analyzeDemandPatterns({
+        items,
+        movements,
+        demandSignals,
+        historicalDays: 30,
+      });
+
+      return insights;
+    } catch (error) {
+      console.error("Error getting AI insights:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Get AI-powered anomaly analysis using Z.ai
+   */
+  async getAnomalyAnalysis(
+    anomalyId: string,
+    tenantId: string
+  ): Promise<AnomalyAnalysis | null> {
+    if (!zaiService.isConfigured()) {
+      console.log("Z.ai service not configured, skipping anomaly analysis");
+      return null;
+    }
+
+    try {
+      const anomalies = await storage.getAnomalies(tenantId);
+      const anomaly = anomalies.find(a => a.id === anomalyId);
+
+      if (!anomaly) {
+        return null;
+      }
+
+      const items = await storage.getItems(tenantId);
+      const movements = await storage.getStockMovements(tenantId);
+
+      const item = anomaly.itemId
+        ? items.find(i => i.id === anomaly.itemId)
+        : undefined;
+
+      const recentMovements = anomaly.itemId
+        ? movements.filter(m =>
+            m.itemId === anomaly.itemId &&
+            m.timestamp &&
+            new Date(m.timestamp) >= new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+          )
+        : [];
+
+      const relatedAnomalies = anomalies.filter(a =>
+        a.id !== anomalyId &&
+        a.type === anomaly.type &&
+        a.status === "open"
+      );
+
+      const analysis = await zaiService.analyzeAnomaly(anomaly, {
+        item,
+        recentMovements,
+        relatedAnomalies,
+      });
+
+      return analysis;
+    } catch (error) {
+      console.error("Error getting anomaly analysis:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Enhanced recommendations generation with Z.ai insights
+   */
+  async generateEnhancedRecommendations(tenantId: string): Promise<AnalysisResult & { aiInsights?: DemandInsight }> {
+    // First, run the standard analysis
+    const result = await this.generateRecommendations(tenantId);
+
+    // Try to enhance with AI insights
+    const aiInsights = await this.getAIInsights(tenantId);
+
+    return {
+      ...result,
+      aiInsights: aiInsights || undefined,
+    };
+  }
+
+  /**
+   * Ask a natural language question about inventory
+   */
+  async askQuestion(question: string, tenantId: string): Promise<{
+    answer: string;
+    answerAr: string;
+    dataPoints: string[];
+    confidence: number;
+  } | null> {
+    if (!zaiService.isConfigured()) {
+      return null;
+    }
+
+    try {
+      const items = await storage.getItems(tenantId);
+      const balances = await storage.getStockBalances(tenantId);
+      const movements = await storage.getStockMovements(tenantId);
+      const recommendations = await storage.getRecommendations(tenantId);
+
+      const answer = await zaiService.askQuestion({
+        question,
+        context: {
+          items,
+          balances,
+          movements,
+          recommendations,
+        },
+      });
+
+      return answer;
+    } catch (error) {
+      console.error("Error asking question:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Generate an inventory report using Z.ai
+   */
+  async generateReport(
+    tenantId: string,
+    type: "daily" | "weekly" | "monthly" | "custom" = "daily",
+    sections: string[] = ["overview", "inventory_status", "recommendations", "anomalies"]
+  ) {
+    if (!zaiService.isConfigured()) {
+      return null;
+    }
+
+    try {
+      const items = await storage.getItems(tenantId);
+      const balances = await storage.getStockBalances(tenantId);
+      const movements = await storage.getStockMovements(tenantId);
+      const recommendations = await storage.getRecommendations(tenantId);
+      const anomalies = await storage.getAnomalies(tenantId);
+
+      const report = await zaiService.generateReport(
+        { type, sections, language: "both" },
+        { items, balances, movements, recommendations, anomalies }
+      );
+
+      return report;
+    } catch (error) {
+      console.error("Error generating report:", error);
+      return null;
+    }
   }
 }
 
