@@ -8,3 +8,14 @@ dist/
 playwright-report/
 playwright/.cache/
 test-results/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Coverage reports
+coverage/
+
+# Editor
+*.swp
+*.swo
+*~
