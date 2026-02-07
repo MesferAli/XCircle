@@ -67,7 +67,7 @@
     "framer-motion": "^11.13.1",
     "input-otp": "^1.4.2",
     "jsonpath-plus": "^10.3.0",
-    "jspdf": "^4.0.0",
+    "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.453.0",
     "memoizee": "^0.4.17",
