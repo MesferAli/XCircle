@@ -129,7 +129,8 @@ export interface DecisionResponse {
   explanation: Explanation;
   policyResult: PolicyResult;
   timestamp: Date;
-  
+  isFallback?: boolean;
+
   // Never expose these to users
   // modelName: string; ❌
   // algorithmType: string; ❌
@@ -156,13 +157,16 @@ export interface Explanation {
   summary: string; // Human-readable summary in Arabic
   topDrivers: ExplanationDriver[];
   scenario: string;
+  confidenceFactors?: Array<{ factor: string; score: number }>;
 }
 
 export interface ExplanationDriver {
   factor: string;
-  contribution: number; // -100 to +100
+  contribution?: number; // -100 to +100
   direction: 'positive' | 'negative';
-  description: string; // Human-readable in Arabic
+  description?: string; // Human-readable in Arabic
+  impact?: 'high' | 'medium' | 'low';
+  value?: string;
 }
 
 export interface PolicyResult {
@@ -260,4 +264,71 @@ export interface FallbackDecision {
   reason: 'model_failed' | 'drift_too_high' | 'approval_revoked' | 'policy_blocked';
   originalError?: string;
   fallbackLogic: string;
+}
+
+// ============================================
+// Advanced ML Model Types
+// ============================================
+
+export interface DemandForecastInput {
+  salesHistory: number[];
+  horizon: number;
+  currentStock: number;
+  seasonalityIndex?: number;
+}
+
+export interface DemandForecastOutput {
+  forecast: number[];
+  predictionInterval: {
+    lower: number[];
+    upper: number[];
+    confidence: number;
+  };
+  totalForecast: number;
+  trend: 'increasing' | 'decreasing' | 'stable';
+  featureImportance?: Record<string, number>;
+}
+
+export interface StockoutRiskInput {
+  currentStock: number;
+  avgDailySales: number;
+  salesVariability: number;
+  leadTimeDays: number;
+  pendingOrders: number;
+  reorderPoint: number;
+  isSeasonalPeak: boolean;
+  supplierReliability: number;
+}
+
+export interface StockoutRiskOutput {
+  risk7Days: { probability: number; level: 'low' | 'medium' | 'high' | 'critical' };
+  risk14Days: { probability: number; level: 'low' | 'medium' | 'high' | 'critical' };
+  risk30Days: { probability: number; level: 'low' | 'medium' | 'high' | 'critical' };
+  overallRisk: 'low' | 'medium' | 'high' | 'critical';
+  recommendedAction: string;
+  reorderQuantity: number;
+  daysUntilStockout: number;
+  safetyStockLevel: number;
+}
+
+export interface AnomalyDetectionInput {
+  metrics: Array<{
+    name: string;
+    currentValue: number;
+    historicalValues: number[];
+  }>;
+}
+
+export interface AnomalyDetectionOutput {
+  isAnomaly: boolean;
+  anomalyScore: number;
+  severity: 'none' | 'low' | 'medium' | 'high';
+  anomalies: Array<{
+    metricName: string;
+    currentValue: number;
+    expectedRange: { min: number; max: number };
+    deviation: number;
+    severity: string;
+  }>;
+  timestamp: string;
 }

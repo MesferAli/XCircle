@@ -393,7 +393,7 @@ export default function Capabilities() {
                 </div>
               </div>
 
-              {selectedCapability.sampleResponse && (
+              {!!selectedCapability.sampleResponse && (
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sample Response</p>
                   <pre className="text-sm bg-muted p-4 rounded-lg overflow-auto max-h-64 font-mono">

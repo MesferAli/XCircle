@@ -198,7 +198,7 @@ export class StockoutRiskModel {
     });
     
     // Sort by absolute contribution
-    drivers.sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution));
+    drivers.sort((a, b) => Math.abs(b.contribution ?? 0) - Math.abs(a.contribution ?? 0));
     
     // Generate summary
     const summary = this.generateSummary(input, output);

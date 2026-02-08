@@ -44,8 +44,8 @@ export class ModelRegistry {
    * Get model version by ID
    */
   getModelVersion(modelVersionId: string): ModelVersion | undefined {
-    for (const versions of this.models.values()) {
-      const found = versions.find(v => v.id === modelVersionId);
+    for (const versions of Array.from(this.models.values())) {
+      const found = versions.find((v: ModelVersion) => v.id === modelVersionId);
       if (found) return found;
     }
     return undefined;
@@ -56,6 +56,24 @@ export class ModelRegistry {
    */
   getModelVersions(modelName: string): ModelVersion[] {
     return this.models.get(modelName) || [];
+  }
+
+  /**
+   * Get all models across all names (alias for routes)
+   */
+  getAllModels(): ModelVersion[] {
+    const all: ModelVersion[] = [];
+    for (const versions of Array.from(this.models.values())) {
+      all.push(...versions);
+    }
+    return all;
+  }
+
+  /**
+   * Get model version by ID (alias for routes compatibility)
+   */
+  getModel(modelVersionId: string): ModelVersion | undefined {
+    return this.getModelVersion(modelVersionId);
   }
   
   /**
@@ -172,7 +190,7 @@ export class ModelRegistry {
     let deployedModels = 0;
     let pendingApproval = 0;
     
-    for (const versions of this.models.values()) {
+    for (const versions of Array.from(this.models.values())) {
       totalVersions += versions.length;
       for (const v of versions) {
         if (v.approvalStatus === 'deployed') deployedModels++;

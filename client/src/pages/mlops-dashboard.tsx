@@ -6,7 +6,11 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
+// i18n hook stub - uses local language detection
+const useTranslation = () => ({
+  t: (key: string) => key,
+  i18n: { language: typeof document !== 'undefined' && document.documentElement.lang === 'ar' ? 'ar' : 'en' },
+});
 import { PageHeader } from '@/components/page-header';
 import { StatCard } from '@/components/stat-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -404,25 +408,25 @@ export default function MLOpsDashboard() {
           title={isRTL ? 'النماذج المنشورة' : 'Deployed Models'}
           value={deployedModels}
           icon={<Brain className="h-4 w-4" />}
-          trend={{ value: 0, isPositive: true }}
+          change={0}
         />
         <StatCard
           title={isRTL ? 'في انتظار الموافقة' : 'Pending Approvals'}
           value={pendingApprovals}
           icon={<Clock className="h-4 w-4" />}
-          trend={{ value: pendingApprovals, isPositive: false }}
+          change={-pendingApprovals}
         />
         <StatCard
           title={isRTL ? 'القرارات (30 يوم)' : 'Decisions (30d)'}
           value={stats.total.toLocaleString()}
           icon={<BarChart3 className="h-4 w-4" />}
-          trend={{ value: 12, isPositive: true }}
+          change={12}
         />
         <StatCard
           title={isRTL ? 'معدل الآلية البديلة' : 'Fallback Rate'}
           value={`${stats.fallbackRate}%`}
           icon={<Activity className="h-4 w-4" />}
-          trend={{ value: stats.fallbackRate, isPositive: stats.fallbackRate < 5 }}
+          change={stats.fallbackRate < 5 ? -stats.fallbackRate : stats.fallbackRate}
         />
       </div>
 

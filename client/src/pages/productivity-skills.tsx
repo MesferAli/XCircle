@@ -113,7 +113,7 @@ export default function ProductivitySkills() {
   const handleCompleteStep = (skillId: string, stepIndex: number, totalSteps: number) => {
     const existing = getProgressForSkill(skillId);
     const completedSteps = [...((existing?.completedSteps as number[]) || []), stepIndex];
-    const uniqueSteps = [...new Set(completedSteps)];
+    const uniqueSteps = Array.from(new Set(completedSteps));
     const percent = Math.round((uniqueSteps.length / totalSteps) * 100);
     progressMutation.mutate({
       skillId,

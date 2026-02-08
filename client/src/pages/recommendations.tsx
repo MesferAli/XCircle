@@ -403,7 +403,7 @@ export default function Recommendations() {
                 </div>
               </div>
 
-              {selectedRecommendation.suggestedAction && (
+              {!!selectedRecommendation.suggestedAction && (
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Suggested Action</p>
                   <pre className="text-sm bg-muted p-4 rounded-lg overflow-auto font-mono">

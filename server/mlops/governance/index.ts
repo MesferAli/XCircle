@@ -245,7 +245,7 @@ export class GovernanceGate {
     let requiresApproval = false;
     let reason: string | undefined;
     
-    for (const policy of this.policies.values()) {
+    for (const policy of Array.from(this.policies.values())) {
       if (!policy.isActive) continue;
       
       appliedPolicies.push(policy.id);
@@ -383,6 +383,20 @@ export class GovernanceGate {
     return Array.from(this.approvalRequests.values())
       .filter(r => r.status === 'pending')
       .sort((a, b) => b.requestedAt.getTime() - a.requestedAt.getTime());
+  }
+
+  /**
+   * Get all approval requests
+   */
+  getAllRequests(): ApprovalRequest[] {
+    return Array.from(this.approvalRequests.values());
+  }
+
+  /**
+   * Get a specific approval request by ID
+   */
+  getRequest(id: string): ApprovalRequest | undefined {
+    return this.approvalRequests.get(id);
   }
 }
 

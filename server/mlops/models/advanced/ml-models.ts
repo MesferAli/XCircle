@@ -115,20 +115,20 @@ export class LightGBMDemandModel {
    * Generate explanation for prediction
    */
   generateExplanation(input: DemandForecastInput, output: DemandForecastOutput): Explanation {
-    const drivers = [];
+    const drivers: Explanation['topDrivers'] = [];
 
     // Analyze feature importance
     if (output.featureImportance) {
       const sorted = Object.entries(output.featureImportance)
-        .sort(([, a], [, b]) => b - a)
+        .sort(([, a]: [string, number], [, b]: [string, number]) => b - a)
         .slice(0, 3);
 
       for (const [feature, importance] of sorted) {
         drivers.push({
           factor: this.translateFeature(feature),
-          impact: importance > 0.3 ? 'high' : importance > 0.15 ? 'medium' : 'low',
+          impact: (importance as number) > 0.3 ? 'high' : (importance as number) > 0.15 ? 'medium' : 'low',
           direction: 'positive' as const,
-          value: `${(importance * 100).toFixed(0)}%`,
+          value: `${((importance as number) * 100).toFixed(0)}%`,
         });
       }
     }
@@ -155,12 +155,12 @@ export class LightGBMDemandModel {
 
   private statisticalFallback(input: DemandForecastInput): DemandForecastOutput {
     const { salesHistory, horizon, seasonalityIndex = 1 } = input;
-    
+
     // Calculate statistics
     const recentSales = salesHistory.slice(-14);
-    const mean = recentSales.reduce((a, b) => a + b, 0) / recentSales.length;
+    const mean = recentSales.reduce((a: number, b: number) => a + b, 0) / recentSales.length;
     const std = Math.sqrt(
-      recentSales.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / recentSales.length
+      recentSales.reduce((sum: number, val: number) => sum + Math.pow(val - mean, 2), 0) / recentSales.length
     );
 
     // Simple exponential smoothing
@@ -183,8 +183,8 @@ export class LightGBMDemandModel {
     }
 
     // Determine trend
-    const firstHalf = recentSales.slice(0, 7).reduce((a, b) => a + b, 0);
-    const secondHalf = recentSales.slice(7).reduce((a, b) => a + b, 0);
+    const firstHalf = recentSales.slice(0, 7).reduce((a: number, b: number) => a + b, 0);
+    const secondHalf = recentSales.slice(7).reduce((a: number, b: number) => a + b, 0);
     const trend = secondHalf > firstHalf * 1.1 ? 'increasing' : 
                   secondHalf < firstHalf * 0.9 ? 'decreasing' : 'stable';
 
@@ -477,7 +477,7 @@ export class IsolationForestModel {
    * Generate explanation for anomaly detection
    */
   generateExplanation(input: AnomalyDetectionInput, output: AnomalyDetectionOutput): Explanation {
-    const drivers = output.anomalies.map(a => ({
+    const drivers: Explanation['topDrivers'] = output.anomalies.map((a: AnomalyDetectionOutput['anomalies'][number]) => ({
       factor: a.metricName,
       impact: a.severity as 'high' | 'medium' | 'low',
       direction: a.deviation > 0 ? 'positive' as const : 'negative' as const,
@@ -502,9 +502,9 @@ export class IsolationForestModel {
       const { name, currentValue, historicalValues } = metric;
 
       // Calculate statistics
-      const mean = historicalValues.reduce((a, b) => a + b, 0) / historicalValues.length;
+      const mean = historicalValues.reduce((a: number, b: number) => a + b, 0) / historicalValues.length;
       const std = Math.sqrt(
-        historicalValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / historicalValues.length
+        historicalValues.reduce((sum: number, val: number) => sum + Math.pow(val - mean, 2), 0) / historicalValues.length
       );
 
       // Modified Z-score
@@ -532,9 +532,9 @@ export class IsolationForestModel {
     return {
       isAnomaly: anomalies.length > 0,
       anomalyScore: Math.min(maxScore, 1),
-      severity: anomalies.length > 0 
-        ? (anomalies.some(a => a.severity === 'high') ? 'high' : 
-           anomalies.some(a => a.severity === 'medium') ? 'medium' : 'low')
+      severity: anomalies.length > 0
+        ? (anomalies.some((a: AnomalyDetectionOutput['anomalies'][number]) => a.severity === 'high') ? 'high' :
+           anomalies.some((a: AnomalyDetectionOutput['anomalies'][number]) => a.severity === 'medium') ? 'medium' : 'low')
         : 'none',
       anomalies,
       timestamp: new Date().toISOString(),
@@ -557,7 +557,7 @@ export class IsolationForestModel {
     }
 
     const count = output.anomalies.length;
-    const highSeverity = output.anomalies.filter(a => a.severity === 'high').length;
+    const highSeverity = output.anomalies.filter((a: AnomalyDetectionOutput['anomalies'][number]) => a.severity === 'high').length;
 
     if (highSeverity > 0) {
       return `⚠️ تم اكتشاف ${count} حالة شذوذ، منها ${highSeverity} بشدة عالية. يتطلب مراجعة فورية.`;

@@ -309,7 +309,7 @@ export default function Audit() {
                       const ActionIcon = actionIcons[log.action] || Activity;
                       const colorClass = actionColors[log.action] || "bg-muted text-muted-foreground";
                       const isExpanded = expandedRows.has(log.id);
-                      const hasDetails = log.previousState || log.newState || log.metadata;
+                      const hasDetails = !!(log.previousState || log.newState || log.metadata);
 
                       return (
                         <Collapsible key={log.id} open={isExpanded} onOpenChange={() => toggleRow(log.id)} asChild>
@@ -401,7 +401,7 @@ export default function Audit() {
                                 <TableRow className="bg-muted/30">
                                   <TableCell colSpan={8} className="p-4">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      {log.previousState && (
+                                      {!!log.previousState && (
                                         <div>
                                           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Previous State</p>
                                           <pre className="text-xs bg-background p-3 rounded-lg overflow-auto max-h-32 font-mono">
@@ -409,7 +409,7 @@ export default function Audit() {
                                           </pre>
                                         </div>
                                       )}
-                                      {log.newState && (
+                                      {!!log.newState && (
                                         <div>
                                           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">New State</p>
                                           <pre className="text-xs bg-background p-3 rounded-lg overflow-auto max-h-32 font-mono">
@@ -417,7 +417,7 @@ export default function Audit() {
                                           </pre>
                                         </div>
                                       )}
-                                      {log.metadata && (
+                                      {!!log.metadata && (
                                         <div className={!log.previousState && !log.newState ? "md:col-span-2" : ""}>
                                           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Metadata</p>
                                           <pre className="text-xs bg-background p-3 rounded-lg overflow-auto max-h-32 font-mono">
