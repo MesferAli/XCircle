@@ -1,4 +1,4 @@
-import { eq, sql, and, gte, lte, asc } from "drizzle-orm";
+import { eq, sql, and, gte, lte, asc, inArray } from "drizzle-orm";
 import { db, auditGuard } from "./db";
 import {
   users,
@@ -1024,12 +1024,8 @@ export class DatabaseStorage implements IStorage {
     if (configIds.length === 0) {
       return [];
     }
-    const allHistory: MappingHistory[] = [];
-    for (const configId of configIds) {
-      const history = await this.getMappingHistory(configId);
-      allHistory.push(...history);
-    }
-    return allHistory;
+    // Use single query with IN clause instead of N+1 loop
+    return db.select().from(mappingHistory).where(inArray(mappingHistory.mappingConfigId, configIds));
   }
 
   async createMappingHistory(history: InsertMappingHistory): Promise<MappingHistory> {
@@ -1058,12 +1054,21 @@ export class DatabaseStorage implements IStorage {
     connectors: number;
     activeConnectors: number;
   }> {
-    const [itemsCount] = await db.select({ count: sql`count(*)` }).from(items).where(eq(items.tenantId, tenantId));
-    const [locationsCount] = await db.select({ count: sql`count(*)` }).from(locations).where(eq(locations.tenantId, tenantId));
-    const [recommendationsCount] = await db.select({ count: sql`count(*)` }).from(recommendations).where(eq(recommendations.tenantId, tenantId));
-    const [anomaliesCount] = await db.select({ count: sql`count(*)` }).from(anomalies).where(eq(anomalies.tenantId, tenantId));
-    const [connectorsCount] = await db.select({ count: sql`count(*)` }).from(connectors).where(eq(connectors.tenantId, tenantId));
-    const [activeConnectorsCount] = await db.select({ count: sql`count(*)` }).from(connectors).where(sql`${connectors.tenantId} = ${tenantId} AND ${connectors.status} = 'connected'`);
+    const [
+      [itemsCount],
+      [locationsCount],
+      [recommendationsCount],
+      [anomaliesCount],
+      [connectorsCount],
+      [activeConnectorsCount],
+    ] = await Promise.all([
+      db.select({ count: sql`count(*)` }).from(items).where(eq(items.tenantId, tenantId)),
+      db.select({ count: sql`count(*)` }).from(locations).where(eq(locations.tenantId, tenantId)),
+      db.select({ count: sql`count(*)` }).from(recommendations).where(eq(recommendations.tenantId, tenantId)),
+      db.select({ count: sql`count(*)` }).from(anomalies).where(eq(anomalies.tenantId, tenantId)),
+      db.select({ count: sql`count(*)` }).from(connectors).where(eq(connectors.tenantId, tenantId)),
+      db.select({ count: sql`count(*)` }).from(connectors).where(sql`${connectors.tenantId} = ${tenantId} AND ${connectors.status} = 'connected'`),
+    ]);
 
     return {
       items: Number(itemsCount?.count ?? 0),

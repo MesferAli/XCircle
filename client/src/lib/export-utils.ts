@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 export type ExportFormat = 'pdf' | 'excel' | 'csv';
 
@@ -101,32 +101,48 @@ export function exportToPDF(options: Omit<ExportOptions, 'format'>): void {
   doc.save(`${filename}.pdf`);
 }
 
-export function exportToExcel(options: Omit<ExportOptions, 'format'>): void {
+export async function exportToExcel(options: Omit<ExportOptions, 'format'>): Promise<void> {
   const { title, filename, columns, data } = options;
 
-  const worksheetData = [
-    columns.map(col => col.header),
-    ...data.map(row => columns.map(col => {
-      const value = row[col.key];
-      if (value === null || value === undefined) return '';
-      if (typeof value === 'object' && !(value instanceof Date)) {
-        return JSON.stringify(value);
-      }
-      return value;
-    }))
-  ];
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet(title.slice(0, 31));
 
-  const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
-
-  const colWidths = columns.map(col => ({
-    wch: col.width || Math.max(col.header.length, 15)
+  worksheet.columns = columns.map(col => ({
+    header: col.header,
+    key: col.key,
+    width: col.width || Math.max(col.header.length, 15),
   }));
-  worksheet['!cols'] = colWidths;
 
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, title.slice(0, 31));
+  // Style header row
+  const headerRow = worksheet.getRow(1);
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1C2D40' } };
 
-  XLSX.writeFile(workbook, `${filename}.xlsx`);
+  for (const row of data) {
+    const rowData: Record<string, unknown> = {};
+    for (const col of columns) {
+      const value = row[col.key];
+      if (value === null || value === undefined) {
+        rowData[col.key] = '';
+      } else if (typeof value === 'object' && !(value instanceof Date)) {
+        rowData[col.key] = JSON.stringify(value);
+      } else {
+        rowData[col.key] = value;
+      }
+    }
+    worksheet.addRow(rowData);
+  }
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${filename}.xlsx`;
+  link.click();
+
+  URL.revokeObjectURL(url);
 }
 
 export function exportToCSV(options: Omit<ExportOptions, 'format'>): void {
@@ -152,13 +168,13 @@ export function exportToCSV(options: Omit<ExportOptions, 'format'>): void {
   URL.revokeObjectURL(url);
 }
 
-export function exportData(options: ExportOptions): void {
+export async function exportData(options: ExportOptions): Promise<void> {
   switch (options.format) {
     case 'pdf':
       exportToPDF(options);
       break;
     case 'excel':
-      exportToExcel(options);
+      await exportToExcel(options);
       break;
     case 'csv':
       exportToCSV(options);
