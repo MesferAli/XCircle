@@ -90,19 +90,22 @@ class AIEngine {
   async analyzeDemand(
     itemId: string,
     locationId: string | null,
-    tenantId: string
+    tenantId: string,
+    movements?: StockMovement[],
+    demandSignals?: DemandSignal[]
   ): Promise<DemandForecastResult> {
-    const movements = await storage.getStockMovements(tenantId);
-    const demandSignals = await storage.getDemandSignals(tenantId);
+    // Use pre-fetched data if provided, otherwise fetch (for backward compatibility)
+    const allMovements = movements ?? await storage.getStockMovements(tenantId);
+    const allDemandSignals = demandSignals ?? await storage.getDemandSignals(tenantId);
 
-    const itemMovements = movements.filter(
+    const itemMovements = allMovements.filter(
       (m) =>
         m.itemId === itemId &&
         (locationId === null || m.locationId === locationId) &&
         m.movementType === "out"
     );
 
-    const itemDemandSignals = demandSignals.filter(
+    const itemDemandSignals = allDemandSignals.filter(
       (d) =>
         d.itemId === itemId &&
         (locationId === null || d.locationId === locationId)
@@ -224,14 +227,18 @@ class AIEngine {
   async predictStockoutRisk(
     itemId: string,
     locationId: string,
-    tenantId: string
+    tenantId: string,
+    items?: Item[],
+    stockBalances?: StockBalance[],
+    movements?: StockMovement[]
   ): Promise<StockoutRiskResult> {
-    const items = await storage.getItems(tenantId);
-    const stockBalances = await storage.getStockBalances(tenantId);
-    const movements = await storage.getStockMovements(tenantId);
+    // Use pre-fetched data if provided, otherwise fetch (for backward compatibility)
+    const allItems = items ?? await storage.getItems(tenantId);
+    const allStockBalances = stockBalances ?? await storage.getStockBalances(tenantId);
+    const allMovements = movements ?? await storage.getStockMovements(tenantId);
 
-    const item = items.find((i) => i.id === itemId);
-    const balance = stockBalances.find(
+    const item = allItems.find((i) => i.id === itemId);
+    const balance = allStockBalances.find(
       (b) => b.itemId === itemId && b.locationId === locationId
     );
 
@@ -247,7 +254,7 @@ class AIEngine {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const outboundMovements = movements.filter(
+    const outboundMovements = allMovements.filter(
       (m) =>
         m.itemId === itemId &&
         m.locationId === locationId &&
@@ -484,9 +491,12 @@ class AIEngine {
   }
 
   async generateRecommendations(tenantId: string): Promise<AnalysisResult> {
+    // Pre-fetch all tenant data once to avoid N+1 queries
     const items = await storage.getItems(tenantId);
     const stockBalances = await storage.getStockBalances(tenantId);
     const locations = await storage.getLocations(tenantId);
+    const stockMovements = await storage.getStockMovements(tenantId);
+    const demandSignals = await storage.getDemandSignals(tenantId);
 
     const demandForecasts: DemandForecastResult[] = [];
     const stockoutRisks: StockoutRiskResult[] = [];
@@ -498,17 +508,23 @@ class AIEngine {
 
       for (const balance of itemBalances) {
         try {
+          // Pass pre-fetched data to avoid re-querying
           const forecast = await this.analyzeDemand(
             item.id,
             balance.locationId,
-            tenantId
+            tenantId,
+            stockMovements,
+            demandSignals
           );
           demandForecasts.push(forecast);
 
           const stockoutRisk = await this.predictStockoutRisk(
             item.id,
             balance.locationId,
-            tenantId
+            tenantId,
+            items,
+            stockBalances,
+            stockMovements
           );
           stockoutRisks.push(stockoutRisk);
 

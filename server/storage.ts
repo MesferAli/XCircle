@@ -56,108 +56,108 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   
   // Tenants
-  getTenants(): Promise<Tenant[]>;
+  getTenants(limit?: number, offset?: number): Promise<Tenant[]>;
   getTenant(id: string): Promise<Tenant | undefined>;
   createTenant(tenant: InsertTenant): Promise<Tenant>;
   updateTenant(id: string, updates: Partial<Tenant>): Promise<Tenant | undefined>;
-  
+
   // Connectors
-  getConnectors(tenantId?: string): Promise<Connector[]>;
+  getConnectors(tenantId?: string, limit?: number, offset?: number): Promise<Connector[]>;
   getConnector(id: string): Promise<Connector | undefined>;
   createConnector(connector: InsertConnector): Promise<Connector>;
   updateConnector(id: string, updates: Partial<Connector>): Promise<Connector | undefined>;
   deleteConnector(id: string): Promise<boolean>;
-  
+
   // Endpoints
-  getEndpoints(connectorId: string): Promise<Endpoint[]>;
+  getEndpoints(connectorId: string, limit?: number, offset?: number): Promise<Endpoint[]>;
   getEndpoint(id: string): Promise<Endpoint | undefined>;
   createEndpoint(endpoint: InsertEndpoint): Promise<Endpoint>;
   updateEndpoint(id: string, updates: Partial<Endpoint>): Promise<Endpoint | undefined>;
-  
+
   // Mappings
-  getMappings(connectorId?: string): Promise<Mapping[]>;
+  getMappings(connectorId?: string, limit?: number, offset?: number): Promise<Mapping[]>;
   getMapping(id: string): Promise<Mapping | undefined>;
   createMapping(mapping: InsertMapping): Promise<Mapping>;
   updateMapping(id: string, updates: Partial<Mapping>): Promise<Mapping | undefined>;
   deleteMapping(id: string): Promise<boolean>;
-  
+
   // Items
-  getItems(tenantId: string): Promise<Item[]>;
+  getItems(tenantId: string, limit?: number, offset?: number): Promise<Item[]>;
   getItem(id: string): Promise<Item | undefined>;
   createItem(item: InsertItem): Promise<Item>;
-  
+
   // Locations
-  getLocations(tenantId: string): Promise<Location[]>;
+  getLocations(tenantId: string, limit?: number, offset?: number): Promise<Location[]>;
   createLocation(location: InsertLocation): Promise<Location>;
-  
+
   // Stock Balances
-  getStockBalances(tenantId: string): Promise<StockBalance[]>;
+  getStockBalances(tenantId: string, limit?: number, offset?: number): Promise<StockBalance[]>;
   getStockBalance(id: string): Promise<StockBalance | undefined>;
   createStockBalance(balance: InsertStockBalance): Promise<StockBalance>;
-  
+
   // Stock Movements
-  getStockMovements(tenantId: string): Promise<StockMovement[]>;
+  getStockMovements(tenantId: string, limit?: number, offset?: number): Promise<StockMovement[]>;
   createStockMovement(movement: InsertStockMovement): Promise<StockMovement>;
-  
+
   // Demand Signals
-  getDemandSignals(tenantId: string): Promise<DemandSignal[]>;
+  getDemandSignals(tenantId: string, limit?: number, offset?: number): Promise<DemandSignal[]>;
   createDemandSignal(signal: InsertDemandSignal): Promise<DemandSignal>;
-  
+
   // Recommendations
-  getRecommendations(tenantId?: string): Promise<Recommendation[]>;
+  getRecommendations(tenantId?: string, limit?: number, offset?: number): Promise<Recommendation[]>;
   getRecommendation(id: string): Promise<Recommendation | undefined>;
   createRecommendation(rec: InsertRecommendation): Promise<Recommendation>;
   updateRecommendation(id: string, updates: Partial<Recommendation>): Promise<Recommendation | undefined>;
-  
+
   // Anomalies
-  getAnomalies(tenantId?: string): Promise<Anomaly[]>;
+  getAnomalies(tenantId?: string, limit?: number, offset?: number): Promise<Anomaly[]>;
   getAnomaly(id: string): Promise<Anomaly | undefined>;
   createAnomaly(anomaly: InsertAnomaly): Promise<Anomaly>;
   updateAnomaly(id: string, updates: Partial<Anomaly>): Promise<Anomaly | undefined>;
-  
+
   // Policies
-  getPolicies(tenantId?: string): Promise<Policy[]>;
+  getPolicies(tenantId?: string, limit?: number, offset?: number): Promise<Policy[]>;
   getPolicy(id: string): Promise<Policy | undefined>;
   createPolicy(policy: InsertPolicy): Promise<Policy>;
   updatePolicy(id: string, updates: Partial<Policy>): Promise<Policy | undefined>;
   deletePolicy(id: string): Promise<boolean>;
-  
+
   // Approvals
-  getApprovals(tenantId?: string, status?: string): Promise<Approval[]>;
+  getApprovals(tenantId?: string, status?: string, limit?: number, offset?: number): Promise<Approval[]>;
   getApproval(id: string): Promise<Approval | undefined>;
   createApproval(approval: InsertApproval): Promise<Approval>;
   updateApproval(id: string, updates: Partial<Approval>): Promise<Approval | undefined>;
-  getPendingApprovals(tenantId?: string): Promise<Approval[]>;
-  
+  getPendingApprovals(tenantId?: string, limit?: number, offset?: number): Promise<Approval[]>;
+
   // Audit Logs (Immutable - append-only, no updates, no deletes)
-  getAuditLogs(tenantId?: string): Promise<AuditLog[]>;
+  getAuditLogs(tenantId?: string, limit?: number, offset?: number): Promise<AuditLog[]>;
   getAuditLogsByResource(resourceType: string, resourceId: string): Promise<AuditLog[]>;
   getAuditLogsByCorrelation(correlationId: string): Promise<AuditLog[]>;
   getAuditLogsWithFilters(tenantId: string, filters: AuditLogFilters): Promise<AuditLog[]>;
   createAuditLog(log: InsertAuditLog): Promise<AuditLog>;
-  
+
   // Discovered Capabilities
-  getCapabilities(connectorId?: string): Promise<DiscoveredCapability[]>;
+  getCapabilities(connectorId?: string, limit?: number, offset?: number): Promise<DiscoveredCapability[]>;
   createCapability(capability: InsertDiscoveredCapability): Promise<DiscoveredCapability>;
-  
+
   // Onboarding State
   getOnboardingState(tenantId: string): Promise<OnboardingState | undefined>;
   createOnboardingState(state: InsertOnboardingState): Promise<OnboardingState>;
   updateOnboardingState(id: string, updates: Partial<OnboardingState>): Promise<OnboardingState | undefined>;
-  
+
   // Mapping Configs
-  getMappingConfigs(tenantId?: string, connectorId?: string): Promise<MappingConfig[]>;
+  getMappingConfigs(tenantId?: string, connectorId?: string, limit?: number, offset?: number): Promise<MappingConfig[]>;
   getMappingConfig(id: string): Promise<MappingConfig | undefined>;
   createMappingConfig(config: InsertMappingConfig): Promise<MappingConfig>;
   updateMappingConfig(id: string, updates: Partial<MappingConfig>): Promise<MappingConfig | undefined>;
   deleteMappingConfig(id: string): Promise<boolean>;
-  
+
   // Mapping History
-  getMappingHistory(mappingConfigId: string): Promise<MappingHistory[]>;
+  getMappingHistory(mappingConfigId: string, limit?: number, offset?: number): Promise<MappingHistory[]>;
   getMappingHistoryByVersion(mappingConfigId: string, version: number): Promise<MappingHistory | undefined>;
-  getMappingHistoryByTenant(tenantId: string): Promise<MappingHistory[]>;
+  getMappingHistoryByTenant(tenantId: string, limit?: number, offset?: number): Promise<MappingHistory[]>;
   createMappingHistory(history: InsertMappingHistory): Promise<MappingHistory>;
-  
+
   // Stats
   getStats(tenantId: string): Promise<{
     items: number;
@@ -167,22 +167,22 @@ export interface IStorage {
     connectors: number;
     activeConnectors: number;
   }>;
-  
+
   // Subscription Plans
-  getSubscriptionPlans(): Promise<SubscriptionPlan[]>;
+  getSubscriptionPlans(limit?: number, offset?: number): Promise<SubscriptionPlan[]>;
   getSubscriptionPlan(id: string): Promise<SubscriptionPlan | undefined>;
   createSubscriptionPlan(plan: InsertSubscriptionPlan): Promise<SubscriptionPlan>;
   updateSubscriptionPlan(id: string, updates: Partial<SubscriptionPlan>): Promise<SubscriptionPlan | undefined>;
-  
+
   // Subscriptions
-  getSubscriptions(tenantId?: string): Promise<Subscription[]>;
+  getSubscriptions(tenantId?: string, limit?: number, offset?: number): Promise<Subscription[]>;
   getSubscription(id: string): Promise<Subscription | undefined>;
   getSubscriptionByTenant(tenantId: string): Promise<Subscription | undefined>;
   createSubscription(subscription: InsertSubscription): Promise<Subscription>;
   updateSubscription(id: string, updates: Partial<Subscription>): Promise<Subscription | undefined>;
-  
+
   // Payments
-  getPayments(tenantId?: string): Promise<Payment[]>;
+  getPayments(tenantId?: string, limit?: number, offset?: number): Promise<Payment[]>;
   getPayment(id: string): Promise<Payment | undefined>;
   getPaymentByMoyasarId(moyasarPaymentId: string): Promise<Payment | undefined>;
   createPayment(payment: InsertPayment): Promise<Payment>;
@@ -229,8 +229,11 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getTenants(): Promise<Tenant[]> {
-    return db.select().from(tenants);
+  async getTenants(limit?: number, offset?: number): Promise<Tenant[]> {
+    let query = db.select().from(tenants);
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getTenant(id: string): Promise<Tenant | undefined> {
@@ -273,11 +276,13 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getConnectors(tenantId?: string): Promise<Connector[]> {
-    if (tenantId) {
-      return db.select().from(connectors).where(eq(connectors.tenantId, tenantId));
-    }
-    return db.select().from(connectors);
+  async getConnectors(tenantId?: string, limit?: number, offset?: number): Promise<Connector[]> {
+    let query = tenantId
+      ? db.select().from(connectors).where(eq(connectors.tenantId, tenantId))
+      : db.select().from(connectors);
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getConnector(id: string): Promise<Connector | undefined> {
@@ -341,8 +346,11 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getEndpoints(connectorId: string): Promise<Endpoint[]> {
-    return db.select().from(endpoints).where(eq(endpoints.connectorId, connectorId));
+  async getEndpoints(connectorId: string, limit?: number, offset?: number): Promise<Endpoint[]> {
+    let query = db.select().from(endpoints).where(eq(endpoints.connectorId, connectorId));
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getEndpoint(id: string): Promise<Endpoint | undefined> {
@@ -391,11 +399,13 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getMappings(connectorId?: string): Promise<Mapping[]> {
-    if (connectorId) {
-      return db.select().from(mappings).where(eq(mappings.connectorId, connectorId));
-    }
-    return db.select().from(mappings);
+  async getMappings(connectorId?: string, limit?: number, offset?: number): Promise<Mapping[]> {
+    let query = connectorId
+      ? db.select().from(mappings).where(eq(mappings.connectorId, connectorId))
+      : db.select().from(mappings);
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getMapping(id: string): Promise<Mapping | undefined> {
@@ -468,8 +478,11 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getItems(tenantId: string): Promise<Item[]> {
-    return db.select().from(items).where(eq(items.tenantId, tenantId));
+  async getItems(tenantId: string, limit?: number, offset?: number): Promise<Item[]> {
+    let query = db.select().from(items).where(eq(items.tenantId, tenantId));
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getItem(id: string): Promise<Item | undefined> {
@@ -492,8 +505,11 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getLocations(tenantId: string): Promise<Location[]> {
-    return db.select().from(locations).where(eq(locations.tenantId, tenantId));
+  async getLocations(tenantId: string, limit?: number, offset?: number): Promise<Location[]> {
+    let query = db.select().from(locations).where(eq(locations.tenantId, tenantId));
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async createLocation(location: InsertLocation): Promise<Location> {
@@ -511,8 +527,11 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getStockBalances(tenantId: string): Promise<StockBalance[]> {
-    return db.select().from(stockBalances).where(eq(stockBalances.tenantId, tenantId));
+  async getStockBalances(tenantId: string, limit?: number, offset?: number): Promise<StockBalance[]> {
+    let query = db.select().from(stockBalances).where(eq(stockBalances.tenantId, tenantId));
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getStockBalance(id: string): Promise<StockBalance | undefined> {
@@ -535,8 +554,11 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getStockMovements(tenantId: string): Promise<StockMovement[]> {
-    return db.select().from(stockMovements).where(eq(stockMovements.tenantId, tenantId));
+  async getStockMovements(tenantId: string, limit?: number, offset?: number): Promise<StockMovement[]> {
+    let query = db.select().from(stockMovements).where(eq(stockMovements.tenantId, tenantId));
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async createStockMovement(movement: InsertStockMovement): Promise<StockMovement> {
@@ -554,8 +576,11 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getDemandSignals(tenantId: string): Promise<DemandSignal[]> {
-    return db.select().from(demandSignals).where(eq(demandSignals.tenantId, tenantId));
+  async getDemandSignals(tenantId: string, limit?: number, offset?: number): Promise<DemandSignal[]> {
+    let query = db.select().from(demandSignals).where(eq(demandSignals.tenantId, tenantId));
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async createDemandSignal(signal: InsertDemandSignal): Promise<DemandSignal> {
@@ -573,11 +598,13 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getRecommendations(tenantId?: string): Promise<Recommendation[]> {
-    if (tenantId) {
-      return db.select().from(recommendations).where(eq(recommendations.tenantId, tenantId));
-    }
-    return db.select().from(recommendations);
+  async getRecommendations(tenantId?: string, limit?: number, offset?: number): Promise<Recommendation[]> {
+    let query = tenantId
+      ? db.select().from(recommendations).where(eq(recommendations.tenantId, tenantId))
+      : db.select().from(recommendations);
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getRecommendation(id: string): Promise<Recommendation | undefined> {
@@ -625,11 +652,13 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getAnomalies(tenantId?: string): Promise<Anomaly[]> {
-    if (tenantId) {
-      return db.select().from(anomalies).where(eq(anomalies.tenantId, tenantId));
-    }
-    return db.select().from(anomalies);
+  async getAnomalies(tenantId?: string, limit?: number, offset?: number): Promise<Anomaly[]> {
+    let query = tenantId
+      ? db.select().from(anomalies).where(eq(anomalies.tenantId, tenantId))
+      : db.select().from(anomalies);
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getAnomaly(id: string): Promise<Anomaly | undefined> {
@@ -672,11 +701,13 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getPolicies(tenantId?: string): Promise<Policy[]> {
-    if (tenantId) {
-      return db.select().from(policies).where(eq(policies.tenantId, tenantId));
-    }
-    return db.select().from(policies);
+  async getPolicies(tenantId?: string, limit?: number, offset?: number): Promise<Policy[]> {
+    let query = tenantId
+      ? db.select().from(policies).where(eq(policies.tenantId, tenantId))
+      : db.select().from(policies);
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getPolicy(id: string): Promise<Policy | undefined> {
@@ -740,19 +771,22 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getApprovals(tenantId?: string, status?: string): Promise<Approval[]> {
+  async getApprovals(tenantId?: string, status?: string, limit?: number, offset?: number): Promise<Approval[]> {
+    let query;
     if (tenantId && status) {
-      return db.select().from(approvals).where(
+      query = db.select().from(approvals).where(
         sql`${approvals.tenantId} = ${tenantId} AND ${approvals.status} = ${status}`
       );
+    } else if (tenantId) {
+      query = db.select().from(approvals).where(eq(approvals.tenantId, tenantId));
+    } else if (status) {
+      query = db.select().from(approvals).where(eq(approvals.status, status));
+    } else {
+      query = db.select().from(approvals);
     }
-    if (tenantId) {
-      return db.select().from(approvals).where(eq(approvals.tenantId, tenantId));
-    }
-    if (status) {
-      return db.select().from(approvals).where(eq(approvals.status, status));
-    }
-    return db.select().from(approvals);
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getApproval(id: string): Promise<Approval | undefined> {
@@ -800,19 +834,19 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getPendingApprovals(tenantId?: string): Promise<Approval[]> {
-    return this.getApprovals(tenantId, "pending");
+  async getPendingApprovals(tenantId?: string, limit?: number, offset?: number): Promise<Approval[]> {
+    return this.getApprovals(tenantId, "pending", limit, offset);
   }
 
   // Audit Logs (Immutable - append-only, no updates, no deletes)
   // NOTE: createAuditLog does NOT use the audit guard to avoid infinite recursion
-  async getAuditLogs(tenantId?: string): Promise<AuditLog[]> {
-    if (tenantId) {
-      return db.select().from(auditLogs)
-        .where(eq(auditLogs.tenantId, tenantId))
-        .orderBy(asc(auditLogs.sequenceNumber));
-    }
-    return db.select().from(auditLogs).orderBy(asc(auditLogs.sequenceNumber));
+  async getAuditLogs(tenantId?: string, limit?: number, offset?: number): Promise<AuditLog[]> {
+    let query = tenantId
+      ? db.select().from(auditLogs).where(eq(auditLogs.tenantId, tenantId)).orderBy(asc(auditLogs.sequenceNumber))
+      : db.select().from(auditLogs).orderBy(asc(auditLogs.sequenceNumber));
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getAuditLogsByResource(resourceType: string, resourceId: string): Promise<AuditLog[]> {
@@ -866,11 +900,13 @@ export class DatabaseStorage implements IStorage {
     return auditGuard.createAuditLogDirect(log);
   }
 
-  async getCapabilities(connectorId?: string): Promise<DiscoveredCapability[]> {
-    if (connectorId) {
-      return db.select().from(discoveredCapabilities).where(eq(discoveredCapabilities.connectorId, connectorId));
-    }
-    return db.select().from(discoveredCapabilities);
+  async getCapabilities(connectorId?: string, limit?: number, offset?: number): Promise<DiscoveredCapability[]> {
+    let query = connectorId
+      ? db.select().from(discoveredCapabilities).where(eq(discoveredCapabilities.connectorId, connectorId))
+      : db.select().from(discoveredCapabilities);
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async createCapability(capability: InsertDiscoveredCapability): Promise<DiscoveredCapability> {
@@ -931,19 +967,22 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getMappingConfigs(tenantId?: string, connectorId?: string): Promise<MappingConfig[]> {
+  async getMappingConfigs(tenantId?: string, connectorId?: string, limit?: number, offset?: number): Promise<MappingConfig[]> {
+    let query;
     if (tenantId && connectorId) {
-      return db.select().from(mappingConfigs).where(
+      query = db.select().from(mappingConfigs).where(
         sql`${mappingConfigs.tenantId} = ${tenantId} AND ${mappingConfigs.connectorId} = ${connectorId}`
       );
+    } else if (tenantId) {
+      query = db.select().from(mappingConfigs).where(eq(mappingConfigs.tenantId, tenantId));
+    } else if (connectorId) {
+      query = db.select().from(mappingConfigs).where(eq(mappingConfigs.connectorId, connectorId));
+    } else {
+      query = db.select().from(mappingConfigs);
     }
-    if (tenantId) {
-      return db.select().from(mappingConfigs).where(eq(mappingConfigs.tenantId, tenantId));
-    }
-    if (connectorId) {
-      return db.select().from(mappingConfigs).where(eq(mappingConfigs.connectorId, connectorId));
-    }
-    return db.select().from(mappingConfigs);
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getMappingConfig(id: string): Promise<MappingConfig | undefined> {
@@ -1007,8 +1046,11 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getMappingHistory(mappingConfigId: string): Promise<MappingHistory[]> {
-    return db.select().from(mappingHistory).where(eq(mappingHistory.mappingConfigId, mappingConfigId));
+  async getMappingHistory(mappingConfigId: string, limit?: number, offset?: number): Promise<MappingHistory[]> {
+    let query = db.select().from(mappingHistory).where(eq(mappingHistory.mappingConfigId, mappingConfigId));
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getMappingHistoryByVersion(mappingConfigId: string, version: number): Promise<MappingHistory | undefined> {
@@ -1018,14 +1060,17 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getMappingHistoryByTenant(tenantId: string): Promise<MappingHistory[]> {
+  async getMappingHistoryByTenant(tenantId: string, limit?: number, offset?: number): Promise<MappingHistory[]> {
     const configs = await this.getMappingConfigs(tenantId);
     const configIds = configs.map((c) => c.id);
     if (configIds.length === 0) {
       return [];
     }
     // Use single query with IN clause instead of N+1 loop
-    return db.select().from(mappingHistory).where(inArray(mappingHistory.mappingConfigId, configIds));
+    let query = db.select().from(mappingHistory).where(inArray(mappingHistory.mappingConfigId, configIds));
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async createMappingHistory(history: InsertMappingHistory): Promise<MappingHistory> {
@@ -1081,8 +1126,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Subscription Plans
-  async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
-    return db.select().from(subscriptionPlans).orderBy(asc(subscriptionPlans.sortOrder));
+  async getSubscriptionPlans(limit?: number, offset?: number): Promise<SubscriptionPlan[]> {
+    let query = db.select().from(subscriptionPlans).orderBy(asc(subscriptionPlans.sortOrder));
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getSubscriptionPlan(id: string): Promise<SubscriptionPlan | undefined> {
@@ -1126,11 +1174,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Subscriptions
-  async getSubscriptions(tenantId?: string): Promise<Subscription[]> {
-    if (tenantId) {
-      return db.select().from(subscriptions).where(eq(subscriptions.tenantId, tenantId));
-    }
-    return db.select().from(subscriptions);
+  async getSubscriptions(tenantId?: string, limit?: number, offset?: number): Promise<Subscription[]> {
+    let query = tenantId
+      ? db.select().from(subscriptions).where(eq(subscriptions.tenantId, tenantId))
+      : db.select().from(subscriptions);
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getSubscription(id: string): Promise<Subscription | undefined> {
@@ -1181,11 +1231,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Payments
-  async getPayments(tenantId?: string): Promise<Payment[]> {
-    if (tenantId) {
-      return db.select().from(payments).where(eq(payments.tenantId, tenantId));
-    }
-    return db.select().from(payments);
+  async getPayments(tenantId?: string, limit?: number, offset?: number): Promise<Payment[]> {
+    let query = tenantId
+      ? db.select().from(payments).where(eq(payments.tenantId, tenantId))
+      : db.select().from(payments);
+    if (limit !== undefined) query = query.limit(limit) as typeof query;
+    if (offset !== undefined) query = query.offset(offset) as typeof query;
+    return query;
   }
 
   async getPayment(id: string): Promise<Payment | undefined> {
